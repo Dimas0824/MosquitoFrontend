@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - Smart Larva Detector</title>
+    <title>Admin Login - Smart Larva Detector</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
@@ -41,47 +41,32 @@
 
 <body>
     <div class="min-h-screen flex items-center justify-center p-4" x-data="{
-        deviceId: '',
+        email: '',
         password: '',
         showPassword: false,
         loading: false,
         error: '',
-
-        initRemember() {
-            const savedDeviceId = localStorage.getItem('lastDeviceId');
-            if (savedDeviceId) {
-                this.deviceId = savedDeviceId;
-            }
-            this.$watch('deviceId', value => {
-                localStorage.setItem('lastDeviceId', value);
-            });
-        },
-
+    
         submitForm() {
             this.error = '';
-
-            if (!this.deviceId || !this.password) {
-                this.error = 'ID Perangkat dan Kata Sandi wajib diisi.';
+    
+            if (!this.email || !this.password) {
+                this.error = 'Email dan Kata Sandi wajib diisi.';
                 return;
             }
-
+    
             this.loading = true;
-
-            // Submit form via Laravel
             $refs.loginForm.submit();
         }
-    }" x-init="initRemember()">
-        <div class="max-w-md w-full glass-panel rounded-2xl p-8 animate-fade-in">
-            <!-- Header -->
-            <div class="text-center mb-8">
-                <div><img src="LogoArt.jpeg" alt="" class="mx-auto w-20 h-20 object-contain"></div>
-                <h1 class="text-2xl font-bold text-slate-800 mb-2">Smart Larva Detector</h1>
-                <p class="text-sm text-slate-600">Masuk dengan ID Perangkat Anda</p>
+    }">
+        <div class="max-w-md w-full glass-panel rounded-2xl p-8 animate-fade-in space-y-6">
+            <div class="text-center space-y-1">
+                <h1 class="text-2xl font-bold text-slate-800">Admin Portal</h1>
+                <p class="text-sm text-slate-600">Masuk menggunakan kredensial email & kata sandi</p>
             </div>
 
-            <!-- Error Alert -->
             <div x-show="error" x-transition
-                class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm flex items-start"
+                class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-start"
                 x-cloak>
                 <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd"
@@ -91,10 +76,9 @@
                 <span x-text="error"></span>
             </div>
 
-            <!-- Laravel Error Messages -->
             @if ($errors->any())
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">
-                    <ul class="list-disc list-inside">
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                    <ul class="list-disc list-inside space-y-1">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -102,62 +86,29 @@
                 </div>
             @endif
 
-            @if (session('error'))
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">
-                    {{ session('error') }}
+            @if (session('success'))
+                <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm">
+                    {{ session('success') }}
                 </div>
             @endif
 
-            <!-- Login Form -->
-            <form x-ref="loginForm" action="{{ route('login') }}" method="POST" @submit.prevent="submitForm()"
-                class="space-y-5">
+            <form x-ref="loginForm" action="{{ route('admin.login.submit') }}" method="POST"
+                @submit.prevent="submitForm()" class="space-y-5">
                 @csrf
 
-                <!-- Device ID Input -->
                 <div>
-                    <label for="device_id" class="block text-sm font-medium text-slate-700 mb-2">
-                        ID Perangkat
-                    </label>
-                    <div class="relative">
-                        <div
-                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <rect width="18" height="18" x="3" y="3" rx="2" />
-                                <path d="M7 7h.01" />
-                                <path d="M17 7h.01" />
-                                <path d="M7 17h.01" />
-                                <path d="M17 17h.01" />
-                                <path d="M12 3v18" />
-                                <path d="m3 12 18 0" />
-                            </svg>
-                        </div>
-                        <input type="text" id="device_id" name="device_id" x-model="deviceId"
-                            value="{{ old('device_id') }}"
-                            class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            placeholder="Contoh: ESP32-JEN-001" required>
-                    </div>
+                    <label for="email" class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                    <input type="email" id="email" name="email" x-model="email" value="{{ old('email') }}"
+                        class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="admin@contoh.com" required>
                 </div>
 
-                <!-- Password Input -->
                 <div>
-                    <label for="password" class="block text-sm font-medium text-slate-700 mb-2">
-                        Kata Sandi
-                    </label>
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Kata Sandi</label>
                     <div class="relative">
-                        <div
-                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg>
-                        </div>
                         <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
                             x-model="password"
-                            class="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
                             placeholder="Masukkan kata sandi" required>
                         <button type="button" @click="showPassword = !showPassword"
                             class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
@@ -180,27 +131,24 @@
                     </div>
                 </div>
 
-                <!-- Submit Button -->
                 <button type="submit" :disabled="loading"
                     class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                     <template x-if="loading">
                         <span
                             class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
                     </template>
-                    <span x-text="loading ? 'Memproses...' : 'Masuk ke Dashboard'"></span>
+                    <span x-text="loading ? 'Memproses...' : 'Masuk sebagai Admin'"></span>
                 </button>
             </form>
 
-            <!-- Footer -->
-            <div class="mt-6 text-center space-y-1 text-xs text-slate-500">
+            <div class="mt-4 text-center space-y-1 text-xs text-slate-500">
                 <p>Sistem Deteksi Jentik Otomatis &copy; {{ date('Y') }}</p>
                 <p>
-                    Butuh akses admin? <a href="{{ route('admin.login') }}"
-                        class="text-blue-500 font-semibold hover:underline">Masuk sebagai admin</a>
+                    Bukan admin? <a href="{{ route('login') }}"
+                        class="text-blue-500 font-semibold hover:underline">Masuk
+                        sebagai perangkat</a>
                 </p>
             </div>
         </div>
     </div>
 </body>
-
-</html>

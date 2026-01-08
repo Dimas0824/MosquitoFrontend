@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Device;
+use App\Models\DeviceAuth;
 use App\Services\MosquitoApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -46,12 +47,28 @@ class AuthController extends Controller
         $device = Device::firstOrCreate(
             ['device_code' => $deviceCode],
             [
-                'password' => Hash::make($password),
                 'location' => $deviceInfo['location'] ?? null,
                 'description' => $deviceInfo['description'] ?? null,
                 'is_active' => $deviceInfo['is_active'] ?? true,
             ]
         );
+
+        // Keep local device metadata in sync
+        $device->fill([
+            'location' => $deviceInfo['location'] ?? $device->location,
+            'description' => $deviceInfo['description'] ?? $device->description,
+            'is_active' => $deviceInfo['is_active'] ?? $device->is_active,
+        ]);
+
+        if ($device->isDirty()) {
+            $device->save();
+        }
+
+        // Ensure device auth entry exists/updated
+        $deviceAuth = DeviceAuth::firstOrNew(['device_id' => $device->id]);
+        $deviceAuth->device_code = $device->device_code;
+        $deviceAuth->password_hash = Hash::make($password);
+        $deviceAuth->save();
 
         // Store device info in session
         session([

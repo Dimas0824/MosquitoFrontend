@@ -5,7 +5,11 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActuatorController;
 use App\Http\Controllers\InferenceController;
+use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminInferenceController;
 use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\AdminDeviceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +48,21 @@ Route::get('/', function () {
         return redirect()->route('dashboard');
     }
     return redirect()->route('login');
+});
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
+
+    Route::middleware(['admin.auth'])->group(function () {
+        Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+
+        Route::post('/devices', [AdminDeviceController::class, 'store'])->name('devices.store');
+        Route::patch('/devices/{device}', [AdminDeviceController::class, 'update'])->name('devices.update');
+        Route::delete('/devices/{device}', [AdminDeviceController::class, 'destroy'])->name('devices.destroy');
+        Route::patch('/inference/{inference}', [AdminInferenceController::class, 'update'])->name('inference.update');
+    });
 });
 
 // ============================================================================
@@ -94,3 +113,4 @@ Route::middleware(['auth.device'])->group(function () {
     Route::get('/api/inference/results', [InferenceController::class, 'index'])
         ->name('api.inference.results');
 });
+

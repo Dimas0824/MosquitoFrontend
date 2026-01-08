@@ -10,6 +10,8 @@ class Device extends Model
 {
     use HasFactory, HasUuids;
 
+    public $timestamps = false;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -17,7 +19,6 @@ class Device extends Model
      */
     protected $fillable = [
         'device_code',
-        'password',
         'location',
         'description',
         'is_active',
@@ -29,7 +30,6 @@ class Device extends Model
      * @var array<int, string>
      */
     protected $hidden = [
-        'password',
     ];
 
     /**
