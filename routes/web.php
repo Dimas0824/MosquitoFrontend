@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActuatorController;
 use App\Http\Controllers\InferenceController;
+use App\Http\Controllers\HistoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,14 +77,14 @@ Route::middleware(['auth.device'])->group(function () {
      * API endpoint untuk mengambil data riwayat deteksi (AJAX/Fetch)
      * Response: JSON array of detection records
      */
-    Route::get('/api/detections/history', [DashboardController::class, 'getHistory'])
+    Route::get('/api/detections/history', [HistoryController::class, 'index'])
         ->name('api.detections.history');
 
     /**
      * Route: Download CSV (GET)
      * Download riwayat deteksi dalam format CSV
      */
-    Route::get('/detections/export', [DashboardController::class, 'exportHistory'])
+    Route::get('/detections/export', [HistoryController::class, 'export'])
         ->name('detections.export');
 
     /**
