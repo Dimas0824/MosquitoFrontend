@@ -26,11 +26,11 @@
 
         {{--
             Export CSV Button
-            TODO: Implement export functionality via route('detections.export')
+            Menggunakan endpoint dashboard yang menyajikan data dari DB
         --}}
-        <button class="text-xs text-blue-600 font-medium hover:underline">
+        <a href="{{ route('detections.export') }}" class="text-xs text-blue-600 font-medium hover:underline">
             Download CSV
-        </button>
+        </a>
     </div>
 
     {{-- ========== Table Container (Responsive Overflow) ========== --}}
@@ -102,19 +102,26 @@
 
     {{-- ========== Pagination Controls ========== --}}
     {{-- TODO: Implement actual pagination logic di controller --}}
+    @php
+        $prevUrl = $history->onFirstPage() ? null : $history->previousPageUrl();
+        $nextUrl = $history->hasMorePages() ? $history->nextPageUrl() : null;
+    @endphp
     <div class="p-4 border-t border-slate-100 flex justify-between items-center bg-white">
 
-        {{-- Previous Button (currently disabled) --}}
-        <button class="text-slate-400 text-sm hover:text-slate-600 disabled:opacity-50" disabled>
+        {{-- Previous Button --}}
+        <a href="{{ $prevUrl ?? '#' }}"
+            class="text-slate-400 text-sm hover:text-slate-600 transition {{ $history->onFirstPage() ? 'pointer-events-none opacity-40' : '' }}">
             ← Sebelumnya
-        </button>
+        </a>
 
         {{-- Page Indicator --}}
-        <span class="text-xs text-slate-400">Halaman 1 dari 5</span>
+        <span class="text-xs text-slate-400">Halaman {{ $history->currentPage() }} dari
+            {{ $history->lastPage() ?: 1 }}</span>
 
         {{-- Next Button --}}
-        <button class="text-blue-600 text-sm hover:text-blue-700 font-medium">
+        <a href="{{ $nextUrl ?? '#' }}"
+            class="text-blue-600 text-sm hover:text-blue-700 font-medium transition {{ $history->hasMorePages() ? '' : 'pointer-events-none opacity-40' }}">
             Selanjutnya →
-        </button>
+        </a>
     </div>
 </div>

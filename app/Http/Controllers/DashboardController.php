@@ -6,6 +6,8 @@ use App\Services\MosquitoApiService;
 use App\Models\InferenceResult;
 use App\Models\Image;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -23,46 +25,65 @@ class DashboardController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
         $deviceCode = session('device_code');
         $deviceId = session('device_id');
         $deviceLocation = session('device_location', 'Unknown Location');
         $deviceInfo = session('device_info', []);
 
-        // Fetch detection history directly from DB (inference_results joined with images)
-        $detectionHistory = InferenceResult::with([
+        $perPage = 5;
+        $historyPage = max(1, (int) $request->input('history_page', 1));
+
+        $historyQuery = InferenceResult::with([
             'image' => function ($query) {
                 $query->select('id', 'device_code', 'image_path', 'captured_at');
             }
         ])
             ->where('device_id', $deviceId)
-            ->orderByDesc('inference_at')
-            ->limit(20)
-            ->get()
-            ->map(function (InferenceResult $row) {
-                $capturedAt = $row->image?->captured_at ?? $row->inference_at;
+            ->orderByDesc('inference_at');
 
-                // Derive status based on total_jentik (same thresholds as card)
-                $status = 'Aman';
-                if ($row->total_jentik > 5) {
-                    $status = 'Bahaya';
-                } elseif ($row->total_jentik > 0) {
-                    $status = 'Waspada';
-                }
+        $totalHistory = (clone $historyQuery)->count();
 
-                return [
-                    'id' => $row->id,
-                    'time' => $capturedAt?->timezone(config('app.timezone'))->format('H:i') . ' WIB',
-                    'date' => $capturedAt?->isToday()
-                        ? 'Hari Ini'
-                        : ($capturedAt?->isYesterday() ? 'Kemarin' : $capturedAt?->format('d M Y')),
-                    'count' => $row->total_jentik ?? 0,
-                    'status' => $status,
-                    'image_path' => $row->image?->image_path,
-                    'captured_at' => $capturedAt?->toIso8601String(),
-                ];
-            })->toArray();
+        $historyRecords = (clone $historyQuery)
+            ->skip(($historyPage - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        $historyItems = $historyRecords->map(function (InferenceResult $row) {
+            $capturedAt = $row->image?->captured_at ?? $row->inference_at;
+
+            $status = 'Aman';
+            if ($row->total_jentik > 5) {
+                $status = 'Bahaya';
+            } elseif ($row->total_jentik > 0) {
+                $status = 'Waspada';
+            }
+
+            return [
+                'id' => $row->id,
+                'time' => $capturedAt?->timezone(config('app.timezone'))->format('H:i') . ' WIB',
+                'date' => $capturedAt?->isToday()
+                    ? 'Hari Ini'
+                    : ($capturedAt?->isYesterday() ? 'Kemarin' : $capturedAt?->format('d M Y')),
+                'count' => $row->total_jentik ?? 0,
+                'status' => $status,
+                'image_path' => $row->image?->image_path,
+                'captured_at' => $capturedAt?->toIso8601String(),
+            ];
+        });
+
+        $historyPaginator = new LengthAwarePaginator(
+            $historyItems->values(),
+            $totalHistory,
+            $perPage,
+            $historyPage,
+            [
+                'path' => url()->current(),
+                'query' => Arr::except($request->query(), 'history_page'),
+                'pageName' => 'history_page',
+            ]
+        );
 
         // Gallery: latest images (original) for the device
         $galleryImages = Image::with('inferenceResult')
@@ -163,7 +184,7 @@ class DashboardController extends Controller
             'device_info' => $deviceInfo,
             'latest_detection_count' => $latestDetectionCount,
             'today_detection_total' => $todayDetectionTotal,
-            'history' => $detectionHistory,
+            'history' => $historyPaginator,
             'gallery' => $galleryImages,
             'chart_labels' => $chartLabels,
             'chart_values' => $chartValues,
@@ -198,24 +219,42 @@ class DashboardController extends Controller
     public function exportHistory(Request $request)
     {
         $deviceCode = session('device_code');
-        $detectionHistory = $this->apiService->getDetectionHistory($deviceCode, 1000);
+        $deviceId = session('device_id');
+        $records = InferenceResult::with('image')
+            ->where('device_id', $deviceId)
+            ->orderByDesc('inference_at')
+            ->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"detection_history_{$deviceCode}.csv\"",
         ];
 
-        $callback = function () use ($detectionHistory) {
+        $callback = function () use ($records) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Timestamp', 'Time', 'Date', 'Larvae Count', 'Status']);
 
-            foreach ($detectionHistory as $record) {
+            foreach ($records as $record) {
+                $capturedAt = $record->image?->captured_at ?? $record->inference_at;
+                $count = $record->total_jentik ?? 0;
+                $status = 'Aman';
+                if ($count > 5) {
+                    $status = 'Bahaya';
+                } elseif ($count > 0) {
+                    $status = 'Waspada';
+                }
+
+                $time = $capturedAt?->timezone(config('app.timezone'))->format('H:i') . ' WIB';
+                $date = $capturedAt?->isToday()
+                    ? 'Hari Ini'
+                    : ($capturedAt?->isYesterday() ? 'Kemarin' : $capturedAt?->format('d M Y'));
+
                 fputcsv($file, [
-                    $record['captured_at'] ?? '',
-                    $record['time'] ?? '',
-                    $record['date'] ?? '',
-                    $record['count'] ?? 0,
-                    $record['status'] ?? 'Unknown',
+                    $capturedAt?->toIso8601String() ?? '',
+                    $time,
+                    $date,
+                    $count,
+                    $status,
                 ]);
             }
 

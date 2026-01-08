@@ -83,7 +83,7 @@ Route::middleware(['auth.device'])->group(function () {
      * Route: Download CSV (GET)
      * Download riwayat deteksi dalam format CSV
      */
-    Route::get('/detections/export', [DashboardController::class, 'exportCSV'])
+    Route::get('/detections/export', [DashboardController::class, 'exportHistory'])
         ->name('detections.export');
 
     /**
