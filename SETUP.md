@@ -7,7 +7,7 @@ Frontend dashboard untuk sistem deteksi jentik nyamuk menggunakan Laravel.
 - PHP 8.2+
 - Composer
 - MySQL/MariaDB
-- Backend API berjalan di `http://localhost:8080`
+- Backend API berjalan di `https://mosquitobackend-production.up.railway.app`
 
 ## Setup
 
@@ -29,7 +29,7 @@ DB_DATABASE=mosquito_db
 DB_USERNAME=root
 DB_PASSWORD=root123
 
-MOSQUITO_API_URL=http://localhost:8080
+MOSQUITO_API_URL=https://mosquitobackend-production.up.railway.app
 ```
 
 Sesuaikan kredensial database dan URL backend API jika perlu.
@@ -76,7 +76,7 @@ Gunakan credentials:
 
 ### 2. Test API Connection
 
-Pastikan backend API berjalan di `http://localhost:8080`. Frontend akan:
+Pastikan backend API berjalan di `https://mosquitobackend-production.up.railway.app`. Frontend akan:
 
 1. Validasi credentials dengan endpoint `GET /api/device/info`
 2. Menyimpan session device
@@ -186,7 +186,7 @@ Session menyimpan:
 ### Environment Variables
 
 ```env
-MOSQUITO_API_URL=http://localhost:8080  # Backend API URL
+MOSQUITO_API_URL=https://mosquitobackend-production.up.railway.app  # Backend API URL
 DB_DATABASE=mosquito_db                 # Database name
 ```
 
@@ -194,8 +194,8 @@ DB_DATABASE=mosquito_db                 # Database name
 
 ### Login gagal dengan "Device ID atau kata sandi tidak valid"
 
-1. Pastikan backend API berjalan di `http://localhost:8080`
-2. Test backend health: `curl http://localhost:8080/api/health`
+1. Pastikan backend API berjalan di `https://mosquitobackend-production.up.railway.app`
+2. Test backend health: `curl https://mosquitobackend-production.up.railway.app/api/health`
 3. Cek credentials di backend database
 4. Lihat log Laravel: `storage/logs/laravel.log`
 

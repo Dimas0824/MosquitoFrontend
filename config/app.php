@@ -65,7 +65,8 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Set to WIB (Asia/Jakarta) so logs and timestamps align with local time
+    'timezone' => 'Asia/Jakarta',
 
     /*
     |--------------------------------------------------------------------------

@@ -68,7 +68,7 @@ Laravel Frontend (localhost:8000)
 
 ### 7. **Configuration**
 
-- ✅ `.env` - Added `MOSQUITO_API_URL=http://localhost:8080`
+- ✅ `.env` - Added `MOSQUITO_API_URL=https://mosquitobackend-production.up.railway.app`
 - ✅ `bootstrap/app.php` - Registered middleware alias
 
 ## Cara Kerja Sistem
@@ -129,13 +129,13 @@ Laravel Frontend (localhost:8000)
 ```bash
 # Di terminal backend
 python main.py
-# Running di http://localhost:8080
+# Running di https://mosquitobackend-production.up.railway.app
 ```
 
 ### 2. Verify Backend Health
 
 ```bash
-curl http://localhost:8080/api/health
+curl https://mosquitobackend-production.up.railway.app/api/health
 # Response: {"status": "healthy", ...}
 ```
 
@@ -206,9 +206,9 @@ DB_PASSWORD=root123
 2. Cek credentials di database: `SELECT * FROM device_auth;`
 3. Test FastAPI endpoint:
 
-   ```bash
-   curl -u "test:password" http://localhost:8080/api/device/info
-   ```
+  ```bash
+  curl -u "test:password" https://mosquitobackend-production.up.railway.app/api/device/info
+  ```
 
 ### Dashboard kosong / No detection data
 
@@ -221,8 +221,8 @@ DB_PASSWORD=root123
    SELECT COUNT(*) FROM inference_results;
    ```
 
-2. Upload test image via ESP32 atau backend test script
-3. Verify database connection di `.env`
+1. Upload test image via ESP32 atau backend test script
+1. Verify database connection di `.env`
 
 ## Migration Status
 

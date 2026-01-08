@@ -40,9 +40,9 @@
 
             {{-- Title & Device ID --}}
             <div>
-                <h1 class="text-lg font-bold text-slate-800 leading-tight">Dashboard Monitoring Jentik</h1>
+                <h1 class="text-lg font-bold text-slate-800 leading-tight">Dashboard Smart Larva Detector</h1>
                 {{-- Menampilkan Device ID dari session, default 'Guest Device' jika tidak ada --}}
-                <p class="text-xs text-slate-500">{{ session('device_id', 'Guest Device') }}</p>
+                <p class="text-xs text-slate-500">{{ session('device_code', 'Guest Device') }}</p>
             </div>
         </div>
 

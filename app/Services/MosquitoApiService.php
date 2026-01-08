@@ -11,9 +11,8 @@ class MosquitoApiService
 
     public function __construct()
     {
-        $this->baseUrl = env('MOSQUITO_API_URL', 'http://localhost:8080');
+        $this->baseUrl = env('MOSQUITO_API_URL', 'https://mosquitobackend-production.up.railway.app');
     }
-
     /**
      * Get device info from backend API
      *

@@ -3,7 +3,7 @@
 ## Base URL
 
 ```markdown
-http://localhost:8080
+https://mosquitobackend-production.up.railway.app
 ```
 
 ## Authentication
@@ -96,7 +96,7 @@ Authorization: Basic base64(device_code:password)
 **cURL:**
 
 ```bash
-curl -X POST http://localhost:8080/api/upload \
+curl -X POST https://mosquitobackend-production.up.railway.app/api/upload \
   -u "ESP32_TEST_01:password123" \
   -F "image=@/path/to/image.jpg" \
   -F "captured_at=2026-01-02T10:30:00Z"
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8080/api/upload \
 import requests
 from requests.auth import HTTPBasicAuth
 
-url = "http://localhost:8080/api/upload"
+url = "https://mosquitobackend-production.up.railway.app/api/upload"
 auth = HTTPBasicAuth("ESP32_TEST_01", "password123")
 
 with open("image.jpg", "rb") as f:
@@ -208,7 +208,7 @@ void uploadImage(uint8_t* imageData, size_t imageSize) {
 **cURL:**
 
 ```bash
-curl -X GET http://localhost:8080/api/device/info \
+curl -X GET https://mosquitobackend-production.up.railway.app/api/device/info \
   -u "ESP32_TEST_01:password123"
 ```
 
@@ -218,7 +218,7 @@ curl -X GET http://localhost:8080/api/device/info \
 import requests
 from requests.auth import HTTPBasicAuth
 
-url = "http://localhost:8080/api/device/info"
+url = "https://mosquitobackend-production.up.railway.app/api/device/info"
 auth = HTTPBasicAuth("ESP32_TEST_01", "password123")
 
 response = requests.get(url, auth=auth)
@@ -253,7 +253,7 @@ print(response.json())
 **cURL:**
 
 ```bash
-curl http://localhost:8080/api/health
+curl https://mosquitobackend-production.up.railway.app/api/health
 ```
 
 **Python:**
@@ -261,7 +261,7 @@ curl http://localhost:8080/api/health
 ```python
 import requests
 
-response = requests.get("http://localhost:8080/api/health")
+response = requests.get("https://mosquitobackend-production.up.railway.app/api/health")
 print(response.json())
 ```
 
@@ -412,7 +412,7 @@ python test_upload.py
 
 ### Test via Swagger UI
 
-Buka browser: `http://localhost:8080/docs`
+Buka browser: `https://mosquitobackend-production.up.railway.app/docs`
 
 ### Test via Postman
 

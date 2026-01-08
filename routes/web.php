@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActuatorController;
+use App\Http\Controllers\InferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,4 +85,11 @@ Route::middleware(['auth.device'])->group(function () {
      */
     Route::get('/detections/export', [DashboardController::class, 'exportCSV'])
         ->name('detections.export');
+
+    /**
+     * Route: Inference Results (GET)
+     * API endpoint mengambil data inference langsung dari database (by device)
+     */
+    Route::get('/api/inference/results', [InferenceController::class, 'index'])
+        ->name('api.inference.results');
 });

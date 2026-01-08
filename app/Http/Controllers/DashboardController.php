@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\MosquitoApiService;
+use App\Models\InferenceResult;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -22,16 +25,55 @@ class DashboardController extends Controller
     public function index()
     {
         $deviceCode = session('device_code');
+        $deviceId = session('device_id');
         $deviceLocation = session('device_location', 'Unknown Location');
         $deviceInfo = session('device_info', []);
 
         // Fetch detection history from shared database (same DB as FastAPI)
         $detectionHistory = $this->apiService->getDetectionHistory($deviceCode, 10);
 
+        // KPI sources from inference_results table
+        $latestInference = InferenceResult::where('device_id', $deviceId)
+            ->orderByDesc('inference_at')
+            ->first();
+
+        $latestDetectionCount = $latestInference?->total_jentik;
+
+        $todayDetectionTotal = InferenceResult::where('device_id', $deviceId)
+            ->whereDate('inference_at', now()->toDateString())
+            ->count();
+
+        // Debug KPI sources to verify data matches DB
+        try {
+            $imageCount = DB::table('images')->where('device_id', $deviceId)->count();
+            $inferenceCount = DB::table('inference_results')->where('device_id', $deviceId)->count();
+            $latestInference = DB::table('inference_results')
+                ->where('device_id', $deviceId)
+                ->orderByDesc('inference_at')
+                ->first();
+
+            Log::info('KPI debug snapshot', [
+                'device_id' => $deviceId,
+                'device_code' => $deviceCode,
+                'image_count' => $imageCount,
+                'inference_count' => $inferenceCount,
+                'latest_inference_at' => $latestInference->inference_at ?? null,
+                'latest_total_jentik' => $latestInference->total_jentik ?? null,
+                'latest_image_id' => $latestInference->image_id ?? null,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('KPI debug snapshot failed', [
+                'device_id' => $deviceId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         return view('dashboard2', [
             'device_code' => $deviceCode,
             'device_location' => $deviceLocation,
             'device_info' => $deviceInfo,
+            'latest_detection_count' => $latestDetectionCount,
+            'today_detection_total' => $todayDetectionTotal,
             'images' => $detectionHistory,
         ]);
     }
