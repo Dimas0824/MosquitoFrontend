@@ -78,10 +78,10 @@
         showModal: false,
         isActivating: false,
         selectedImage: null,
-
+    
         // Notification State
         successMsg: '',
-
+    
         /**
          * Confirm Actuator Activation
          * Mengirim POST request ke API untuk aktivasi manual pompa/larvasida
@@ -89,7 +89,7 @@
          */
         confirmActuator() {
             this.isActivating = true;
-
+    
             fetch('{{ route('actuator.activate') }}', {
                     method: 'POST',
                     headers: {
@@ -164,15 +164,16 @@
             const canvas = document.getElementById('weeklyChart');
             if (canvas) {
                 const ctx = canvas.getContext('2d');
+                const labels = @json($chart_labels ?? []);
+                const values = @json($chart_values ?? []);
+
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                        labels: labels,
                         datasets: [{
                             label: 'Jentik Terdeteksi',
-                            data: [12, 19, 3, 5, 2, 3,
-                                10
-                            ], // TODO: Replace dengan data real dari backend
+                            data: values,
                             borderColor: '#3b82f6',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             borderWidth: 2,

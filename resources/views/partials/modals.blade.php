@@ -109,25 +109,31 @@
             <div
                 class="relative w-full aspect-video bg-gray-800 rounded-xl overflow-hidden shadow-2xl flex items-center justify-center">
 
-                {{-- Image Placeholder --}}
-                <div class="w-full h-full bg-slate-800 flex flex-col items-center justify-center text-slate-500">
-                    {{-- Icon Gambar Besar --}}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                        <circle cx="9" cy="9" r="2" />
-                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
-                    <span class="mt-4 text-sm" x-text="'Foto ID: ' + selectedImage.id"></span>
-                </div>
+                <template x-if="selectedImage.image_src">
+                    <img :src="selectedImage.image_src" class="absolute inset-0 w-full h-full object-cover z-10"
+                        :alt="'Foto ' + selectedImage.id">
+                </template>
+                <template x-if="!selectedImage.image_src">
+                    <div
+                        class="absolute inset-0 w-full h-full bg-slate-800 flex flex-col items-center justify-center text-slate-500">
+                        {{-- Icon Gambar Besar --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                            <circle cx="9" cy="9" r="2" />
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                        </svg>
+                        <span class="mt-4 text-sm" x-text="'Foto ID: ' + selectedImage.id"></span>
+                    </div>
+                </template>
 
                 {{--
                     Info Overlay (Bottom Gradient)
                     Menampilkan metadata foto: tanggal, waktu, jumlah jentik, status
                 --}}
                 <div
-                    class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
+                    class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white z-20">
                     <div class="flex justify-between items-end">
 
                         {{-- Left: Tanggal & Jumlah Jentik --}}

@@ -9,7 +9,7 @@
  * - Card preview dengan metadata (waktu, status, jumlah jentik)
  * - Klik untuk melihat detail di lightbox modal
  *
- * @props $images (array|null) - Array data foto deteksi
+ * @props $gallery (array|null) - Array data foto deteksi
  * @alpine-data selectedImage - State untuk lightbox modal
  *
  * Data Structure:
@@ -53,19 +53,8 @@
         --}}
         <div class="flex overflow-x-auto gap-4 pb-4 custom-scrollbar">
 
-            {{-- PHP: Prepare dummy data jika $images tidak tersedia dari controller --}}
-            @php
-                $dummyImages = $images ?? [
-                    ['id' => 1, 'time' => '10:30 WIB', 'date' => 'Hari Ini', 'count' => 5, 'status' => 'Bahaya'],
-                    ['id' => 2, 'time' => '09:00 WIB', 'date' => 'Hari Ini', 'count' => 0, 'status' => 'Aman'],
-                    ['id' => 3, 'time' => '16:45 WIB', 'date' => 'Kemarin', 'count' => 2, 'status' => 'Waspada'],
-                    ['id' => 4, 'time' => '12:00 WIB', 'date' => 'Kemarin', 'count' => 0, 'status' => 'Aman'],
-                    ['id' => 5, 'time' => '10:00 WIB', 'date' => 'Kemarin', 'count' => 8, 'status' => 'Bahaya'],
-                ];
-            @endphp
-
             {{-- Loop semua gambar --}}
-            @foreach ($dummyImages as $img)
+            @forelse ($gallery ?? [] as $img)
                 {{--
                     Card Item
                     @click="selectedImage = ..." - Set data untuk lightbox modal
@@ -77,18 +66,23 @@
 
                     {{-- Image Placeholder (aspect-square untuk rasio 1:1) --}}
                     <div
-                        class="aspect-square bg-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-200 transition-colors relative">
-                        <div class="absolute inset-0 flex flex-col items-center justify-center">
-                            {{-- Icon Gambar --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                                <circle cx="9" cy="9" r="2" />
-                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                            </svg>
-                            <span class="text-xs mt-2 font-medium">Foto #{{ $img['id'] }}</span>
-                        </div>
+                        class="aspect-square bg-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-200 transition-colors relative overflow-hidden">
+                        @if (!empty($img['image_src']))
+                            <img src="{{ $img['image_src'] }}" alt="Foto {{ $img['id'] }}"
+                                class="w-full h-full object-cover">
+                        @else
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                {{-- Icon Gambar --}}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                    <circle cx="9" cy="9" r="2" />
+                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                </svg>
+                                <span class="text-xs mt-2 font-medium">Foto #{{ $img['id'] }}</span>
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Metadata Footer --}}
@@ -116,7 +110,9 @@
                         <p class="text-xs text-slate-700 font-semibold mt-1">{{ $img['count'] }} Jentik</p>
                     </div>
                 </div>
-            @endforeach
+            @empty
+                <div class="text-slate-400 text-sm">Belum ada foto deteksi.</div>
+            @endforelse
         </div>
     </div>
 </div>

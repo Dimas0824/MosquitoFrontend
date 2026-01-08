@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\MosquitoApiService;
 use App\Models\InferenceResult;
+use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -29,8 +30,96 @@ class DashboardController extends Controller
         $deviceLocation = session('device_location', 'Unknown Location');
         $deviceInfo = session('device_info', []);
 
-        // Fetch detection history from shared database (same DB as FastAPI)
-        $detectionHistory = $this->apiService->getDetectionHistory($deviceCode, 10);
+        // Fetch detection history directly from DB (inference_results joined with images)
+        $detectionHistory = InferenceResult::with([
+            'image' => function ($query) {
+                $query->select('id', 'device_code', 'image_path', 'captured_at');
+            }
+        ])
+            ->where('device_id', $deviceId)
+            ->orderByDesc('inference_at')
+            ->limit(20)
+            ->get()
+            ->map(function (InferenceResult $row) {
+                $capturedAt = $row->image?->captured_at ?? $row->inference_at;
+
+                // Derive status based on total_jentik (same thresholds as card)
+                $status = 'Aman';
+                if ($row->total_jentik > 5) {
+                    $status = 'Bahaya';
+                } elseif ($row->total_jentik > 0) {
+                    $status = 'Waspada';
+                }
+
+                return [
+                    'id' => $row->id,
+                    'time' => $capturedAt?->timezone(config('app.timezone'))->format('H:i') . ' WIB',
+                    'date' => $capturedAt?->isToday()
+                        ? 'Hari Ini'
+                        : ($capturedAt?->isYesterday() ? 'Kemarin' : $capturedAt?->format('d M Y')),
+                    'count' => $row->total_jentik ?? 0,
+                    'status' => $status,
+                    'image_path' => $row->image?->image_path,
+                    'captured_at' => $capturedAt?->toIso8601String(),
+                ];
+            })->toArray();
+
+        // Gallery: latest images (original) for the device
+        $galleryImages = Image::with('inferenceResult')
+            ->where('device_id', $deviceId)
+            ->where('image_type', 'original')
+            ->orderByDesc('captured_at')
+            ->limit(12)
+            ->get()
+            ->map(function (Image $img) {
+                $capturedAt = $img->captured_at;
+
+                $status = 'Aman';
+                $count = optional($img->inferenceResult)->total_jentik;
+                if ($count > 5) {
+                    $status = 'Bahaya';
+                } elseif ($count > 0) {
+                    $status = 'Waspada';
+                }
+
+                // Build inline data URI if blob exists
+                $imageSrc = null;
+                if (!empty($img->image_blob)) {
+                    $imageSrc = 'data:image/jpeg;base64,' . base64_encode($img->image_blob);
+                } elseif (!empty($img->image_path)) {
+                    $imageSrc = $img->image_path;
+                }
+
+                return [
+                    'id' => $img->id,
+                    'time' => $capturedAt?->timezone(config('app.timezone'))->format('H:i') . ' WIB',
+                    'date' => $capturedAt?->isToday()
+                        ? 'Hari Ini'
+                        : ($capturedAt?->isYesterday() ? 'Kemarin' : $capturedAt?->format('d M Y')),
+                    'count' => $count ?? 0,
+                    'status' => $status,
+                    'image_path' => $img->image_path,
+                    'image_src' => $imageSrc,
+                    'captured_at' => $capturedAt?->toIso8601String(),
+                ];
+            })->toArray();
+
+        // Weekly chart: last 7 days counts from inference_results
+        $startDate = now()->subDays(6)->startOfDay();
+        $rawCounts = DB::table('inference_results')
+            ->selectRaw('DATE(inference_at) as d, COALESCE(SUM(total_jentik), 0) as total')
+            ->where('device_id', $deviceId)
+            ->where('inference_at', '>=', $startDate)
+            ->groupBy('d')
+            ->pluck('total', 'd');
+
+        $chartLabels = [];
+        $chartValues = [];
+        for ($i = 0; $i < 7; $i++) {
+            $day = now()->subDays(6 - $i)->startOfDay();
+            $chartLabels[] = $day->locale('id')->isoFormat('ddd');
+            $chartValues[] = (int) ($rawCounts[$day->toDateString()] ?? 0);
+        }
 
         // KPI sources from inference_results table
         $latestInference = InferenceResult::where('device_id', $deviceId)
@@ -74,7 +163,10 @@ class DashboardController extends Controller
             'device_info' => $deviceInfo,
             'latest_detection_count' => $latestDetectionCount,
             'today_detection_total' => $todayDetectionTotal,
-            'images' => $detectionHistory,
+            'history' => $detectionHistory,
+            'gallery' => $galleryImages,
+            'chart_labels' => $chartLabels,
+            'chart_values' => $chartValues,
         ]);
     }
 

@@ -10,7 +10,7 @@
  * - Export to CSV button
  * - Responsive overflow scroll
  *
- * @props $dummyImages (array) - Data riwayat deteksi (shared dengan gallery)
+ * @props $history (array) - Data riwayat deteksi
  * @session device_id - ID perangkat untuk kolom Device ID
  */
 --}}
@@ -49,17 +49,8 @@
 
             {{-- Table Body --}}
             <tbody class="divide-y divide-slate-100 bg-white">
-                {{-- PHP: Prepare data - use $images from controller or fallback to dummy data --}}
-                @php
-                    $detectionHistory = $images ?? [
-                        ['id' => 1, 'time' => '10:30 WIB', 'date' => 'Hari Ini', 'count' => 5, 'status' => 'Bahaya'],
-                        ['id' => 2, 'time' => '09:00 WIB', 'date' => 'Hari Ini', 'count' => 0, 'status' => 'Aman'],
-                        ['id' => 3, 'time' => '16:45 WIB', 'date' => 'Kemarin', 'count' => 2, 'status' => 'Waspada'],
-                    ];
-                @endphp
-
                 {{-- Loop data riwayat --}}
-                @forelse ($detectionHistory as $item)
+                @forelse (($history ?? []) as $item)
                     <tr class="hover:bg-slate-50 transition-colors">
 
                         {{-- Kolom 1: Waktu & Tanggal (Stack vertical) --}}
