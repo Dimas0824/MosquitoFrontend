@@ -50,7 +50,9 @@ class DashboardController extends Controller
         );
 
         // Gallery: latest images (original) for the device
-        $galleryImages = Image::with('inferenceResult')
+        $galleryImages = Image::query()
+            ->select(['id', 'device_id', 'image_type', 'image_path', 'image_blob', 'captured_at'])
+            ->with(['inferenceResult:id,image_id,total_jentik'])
             ->where('device_id', $deviceId)
             ->where('image_type', 'original')
             ->orderByDesc('captured_at')
@@ -90,7 +92,8 @@ class DashboardController extends Controller
             })->toArray();
 
         // Weekly chart: last 7 days counts from inference_results
-        $startDate = now()->subDays(6)->startOfDay();
+        $now = now();
+        $startDate = $now->copy()->subDays(6)->startOfDay();
         $rawCounts = DB::table('inference_results')
             ->selectRaw('DATE(inference_at) as d, COALESCE(SUM(total_jentik), 0) as total')
             ->where('device_id', $deviceId)
@@ -101,7 +104,7 @@ class DashboardController extends Controller
         $chartLabels = [];
         $chartValues = [];
         for ($i = 0; $i < 7; $i++) {
-            $day = now()->subDays(6 - $i)->startOfDay();
+            $day = $now->copy()->subDays(6 - $i)->startOfDay();
             $chartLabels[] = $day->locale('id')->isoFormat('ddd');
             $chartValues[] = (int) ($rawCounts[$day->toDateString()] ?? 0);
         }

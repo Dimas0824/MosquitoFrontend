@@ -4,19 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Device;
 use App\Models\DeviceAuth;
-use App\Services\MosquitoApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
-    private MosquitoApiService $apiService;
-
-    public function __construct(MosquitoApiService $apiService)
-    {
-        $this->apiService = $apiService;
-    }
 
     /**
      * Handle device login
@@ -34,47 +27,43 @@ class AuthController extends Controller
         $deviceCode = $request->input('device_id');
         $password = $request->input('password');
 
-        // Validate credentials with backend API
-        $deviceInfo = $this->apiService->getDeviceInfo($deviceCode, $password);
+        // Single round-trip: join devices + device_auth to avoid multiple queries
+        $record = Device::query()
+            ->select([
+                'devices.id',
+                'devices.device_code',
+                'devices.location',
+                'devices.description',
+                'devices.is_active',
+                'device_auth.password_hash',
+            ])
+            ->leftJoin('device_auth', 'device_auth.device_id', '=', 'devices.id')
+            ->where('devices.device_code', $deviceCode)
+            ->first();
 
-        if (!$deviceInfo) {
+        if (!$record || !$record->password_hash || !Hash::check($password, $record->password_hash)) {
             return back()
                 ->withInput()
                 ->withErrors(['device_id' => 'Device ID atau kata sandi tidak valid.']);
         }
 
-        // Check if device exists in local database, if not create it
-        $device = Device::firstOrCreate(
-            ['device_code' => $deviceCode],
-            [
-                'location' => $deviceInfo['location'] ?? null,
-                'description' => $deviceInfo['description'] ?? null,
-                'is_active' => $deviceInfo['is_active'] ?? true,
-            ]
-        );
-
-        // Keep local device metadata in sync
-        $device->fill([
-            'location' => $deviceInfo['location'] ?? $device->location,
-            'description' => $deviceInfo['description'] ?? $device->description,
-            'is_active' => $deviceInfo['is_active'] ?? $device->is_active,
-        ]);
-
-        if ($device->isDirty()) {
-            $device->save();
+        if (!$record->is_active) {
+            return back()
+                ->withInput()
+                ->withErrors(['device_id' => 'Perangkat sedang tidak aktif.']);
         }
 
-        // Ensure device auth entry exists/updated
-        $deviceAuth = DeviceAuth::firstOrNew(['device_id' => $device->id]);
-        $deviceAuth->device_code = $device->device_code;
-        $deviceAuth->password_hash = Hash::make($password);
-        $deviceAuth->save();
+        $deviceInfo = [
+            'device_code' => $record->device_code,
+            'location' => $record->location,
+            'description' => $record->description,
+            'is_active' => (bool) $record->is_active,
+        ];
 
-        // Store device info in session
         session([
-            'device_id' => $device->id,
-            'device_code' => $device->device_code,
-            'device_location' => $deviceInfo['location'] ?? $device->location,
+            'device_id' => $record->id,
+            'device_code' => $record->device_code,
+            'device_location' => $record->location,
             'device_info' => $deviceInfo,
             'api_credentials' => [
                 'device_code' => $deviceCode,
@@ -84,7 +73,7 @@ class AuthController extends Controller
 
         Log::info('Device logged in', [
             'device_code' => $deviceCode,
-            'device_id' => $device->id,
+            'device_id' => $record->id,
         ]);
 
         return redirect()->route('dashboard');

@@ -62,7 +62,16 @@ class HistoryService
 
     private function buildBaseQuery(string $deviceId): Builder
     {
-        return InferenceResult::with('image:id,device_code,image_path,captured_at')
+        return InferenceResult::query()
+            ->select([
+                'id',
+                'device_id',
+                'device_code',
+                'image_id',
+                'inference_at',
+                'total_jentik',
+            ])
+            ->with(['image:id,device_code,image_path,captured_at'])
             ->where('device_id', $deviceId)
             ->orderByDesc('inference_at');
     }

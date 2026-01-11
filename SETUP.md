@@ -34,7 +34,20 @@ MOSQUITO_API_URL=https://mosquitobackend-production.up.railway.app
 
 Sesuaikan kredensial database dan URL backend API jika perlu.
 
-### 3. Database Migration
+### 3. Caching (Redis/Memcached)
+
+Default cache sudah diarahkan ke Redis (`CACHE_STORE=redis`). Pilih salah satu mode di bawah:
+
+- Redis (default): pastikan `REDIS_HOST`, `REDIS_PORT`, dan `REDIS_PASSWORD` sesuai. Cache database memakai DB `REDIS_CACHE_DB=1`.
+- Memcached: set `CACHE_STORE=memcached`, lalu sesuaikan `MEMCACHED_HOST`, `MEMCACHED_PORT`, `MEMCACHED_USERNAME`, dan `MEMCACHED_PASSWORD` jika memerlukan SASL.
+
+Setelah mengubah `.env`, clear config cache jika pernah di-cache:
+
+```bash
+php artisan config:clear
+```
+
+### 4. Database Migration
 
 Jalankan migration untuk membuat tabel `devices`:
 
@@ -42,7 +55,7 @@ Jalankan migration untuk membuat tabel `devices`:
 php artisan migrate
 ```
 
-### 4. Seed Sample Data (Optional)
+### 5. Seed Sample Data (Optional)
 
 Untuk testing, seed device credentials:
 
@@ -55,7 +68,7 @@ Sample devices yang akan dibuat:
 - **Device Code:** `ESP32_TEST_01` | **Password:** `password123`
 - **Device Code:** `ESP32-JEN-001` | **Password:** `mosquito2026`
 
-### 5. Start Development Server
+### 6. Start Development Server
 
 ```bash
 php artisan serve

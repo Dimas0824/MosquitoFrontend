@@ -23,14 +23,26 @@ class InferenceController extends Controller
             ], 401);
         }
 
-        $limit = (int) $request->query('limit', 20);
+        $limit = min(100, max(1, (int) $request->query('limit', 20)));
 
         try {
-            $results = InferenceResult::with([
-                'image' => function ($query) {
-                    $query->select('id', 'device_code', 'image_path', 'captured_at');
-                }
-            ])
+            $results = InferenceResult::query()
+                ->select([
+                    'id',
+                    'device_id',
+                    'device_code',
+                    'image_id',
+                    'inference_at',
+                    'total_jentik',
+                    'total_objects',
+                    'avg_confidence',
+                    'status',
+                ])
+                ->with([
+                    'image' => function ($query) {
+                        $query->select('id', 'device_code', 'image_path', 'captured_at');
+                    }
+                ])
                 ->where('device_id', $deviceId)
                 ->orderByDesc('inference_at')
                 ->limit($limit)
