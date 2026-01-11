@@ -47,15 +47,25 @@ Setelah mengubah `.env`, clear config cache jika pernah di-cache:
 php artisan config:clear
 ```
 
-### 4. Database Migration
+### 4. Impersonation Setup
 
-Jalankan migration untuk membuat tabel `devices`:
+Package `lab404/laravel-impersonate` sudah disertakan. Untuk menggunakan konfigurasi sessi bawaan, publish file konfigurasinya:
+
+```bash
+php artisan vendor:publish --tag=impersonate
+```
+
+Impor trait, middleware, dan route macro sudah tersusun di proyek ini; setelah admin login, panel impersonasi akan tampil otomatis di dashboard admin.
+
+### 5. Database Migration
+
+Jalankan migration untuk membuat tabel `devices` dan struktur lain yang diperlukan:
 
 ```bash
 php artisan migrate
 ```
 
-### 5. Seed Sample Data (Optional)
+### 6. Seed Sample Data (Optional)
 
 Untuk testing, seed device credentials:
 
@@ -68,7 +78,7 @@ Sample devices yang akan dibuat:
 - **Device Code:** `ESP32_TEST_01` | **Password:** `password123`
 - **Device Code:** `ESP32-JEN-001` | **Password:** `mosquito2026`
 
-### 6. Start Development Server
+### 7. Start Development Server
 
 ```bash
 php artisan serve

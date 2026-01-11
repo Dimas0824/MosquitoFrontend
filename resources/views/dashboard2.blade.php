@@ -69,6 +69,32 @@
     MAIN CONTENT
     ============================================================================ --}}
 @section('content')
+    {{-- Floating Action Button - Dark Glass Version --}}
+    @if (session('impersonating_from_admin'))
+        <div class="fixed bottom-8 right-8 z-50">
+            <a href="{{ route('device.impersonate.leave') }}"
+                class="group flex items-center gap-4 p-2 pr-6 rounded-2xl
+                   bg-slate-900/80 backdrop-blur-lg border border-white/10
+                   shadow-2xl hover:bg-slate-900/90 transition-all duration-300">
+
+                {{-- Icon dengan warna Indigo yang senada dengan Dashboard --}}
+                <div
+                    class="flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 group-hover:rotate-12 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12">
+                        </path>
+                    </svg>
+                </div>
+
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-300 leading-none mb-1">Session
+                        Active</span>
+                    <span class="text-sm font-semibold text-white">Kembali ke Admin</span>
+                </div>
+            </a>
+        </div>
+    @endif
+
     {{--
         Alpine.js Root Container
         State Management untuk modal, notifications, dan API calls
@@ -78,10 +104,10 @@
         showModal: false,
         isActivating: false,
         selectedImage: null,
-    
+
         // Notification State
         successMsg: '',
-    
+
         /**
          * Confirm Actuator Activation
          * Mengirim POST request ke API untuk aktivasi manual pompa/larvasida
@@ -89,7 +115,7 @@
          */
         confirmActuator() {
             this.isActivating = true;
-    
+
             fetch('{{ route('actuator.activate') }}', {
                     method: 'POST',
                     headers: {

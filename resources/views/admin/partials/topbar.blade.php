@@ -30,6 +30,13 @@
             @if (!empty($adminEmail))
                 <span>Masuk sebagai {{ $adminEmail }}</span>
             @endif
+            @impersonating
+                <div class="flex flex-wrap items-center gap-2 text-amber-600">
+                    <span>Menampilkan sebagai {{ auth()->user()->name }}</span>
+                    <a href="{{ route('impersonate.leave') }}"
+                        class="text-amber-500 underline decoration-dotted hover:text-amber-600">Kembali ke admin</a>
+                </div>
+            @endImpersonating
         </div>
     </div>
     <div

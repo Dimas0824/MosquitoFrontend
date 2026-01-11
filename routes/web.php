@@ -10,6 +10,9 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInferenceController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\AdminDeviceController;
+use App\Http\Controllers\DeviceImpersonateController;
+
+Route::impersonate();
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +65,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('/devices/{device}', [AdminDeviceController::class, 'update'])->name('devices.update');
         Route::delete('/devices/{device}', [AdminDeviceController::class, 'destroy'])->name('devices.destroy');
         Route::patch('/inference/{inference}', [AdminInferenceController::class, 'update'])->name('inference.update');
+
+        Route::get('/devices/{device}/impersonate', [DeviceImpersonateController::class, 'impersonate'])->name('devices.impersonate');
     });
 });
 
@@ -76,6 +81,12 @@ Route::middleware(['auth.device'])->group(function () {
      * Halaman utama monitoring dengan KPI, grafik, galeri foto, dan riwayat
      */
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    /**
+     * Route: Leave Device Impersonation (GET)
+     * Kembali ke admin panel jika sedang impersonate device
+     */
+    Route::get('/impersonate/leave-device', [DeviceImpersonateController::class, 'leave'])->name('device.impersonate.leave');
 
     /**
      * Route: Logout (POST)
