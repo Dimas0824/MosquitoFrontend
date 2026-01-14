@@ -22,5 +22,10 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@admin.com',
             'password' => bcrypt('admin123'),
         ]);
+
+        // Seed data from railway export
+        $this->call([
+            RailwayDataSeeder::class,
+        ]);
     }
 }

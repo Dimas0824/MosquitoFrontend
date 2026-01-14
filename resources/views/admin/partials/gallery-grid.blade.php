@@ -4,14 +4,24 @@
             <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Galeri Visual Deteksi</h2>
             <p class="text-sm text-slate-500">Hasil visual yang dikirim oleh modul kamera.</p>
         </div>
+        @php
+            $deviceOptions = collect($galleryImages ?? [])
+                ->pluck('device_code')
+                ->filter()
+                ->unique();
+        @endphp
         <div class="flex items-center gap-2">
             <span class="text-xs font-medium text-slate-400">Filter by:</span>
             <select
                 class="bg-white border border-slate-200 text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500">
-                <option>Semua Device</option>
-                @foreach ($galleryImages as $img)
-                    <option>{{ $img['device_code'] }}</option>
-                @endforeach
+                @if ($deviceOptions->isNotEmpty())
+                    <option value="">Semua Device</option>
+                    @foreach ($deviceOptions as $deviceCode)
+                        <option value="{{ $deviceCode }}">{{ $deviceCode }}</option>
+                    @endforeach
+                @else
+                    <option disabled>Belum ada device</option>
+                @endif
             </select>
         </div>
     </div>

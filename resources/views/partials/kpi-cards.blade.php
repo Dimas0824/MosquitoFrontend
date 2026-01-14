@@ -24,7 +24,7 @@
 
             {{-- Nilai Utama dengan default 5 jika tidak ada data --}}
             <h3 class="text-4xl font-bold text-red-500">
-                {{ $latest_detection_count ?? 5 }}
+                {{ $latest_detection_count ?? 0 }}
                 <span class="text-lg text-slate-400 font-normal">ekor</span>
             </h3>
 

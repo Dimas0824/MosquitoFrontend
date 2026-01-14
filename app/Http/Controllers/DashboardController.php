@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\InferenceResult;
 use App\Models\Image;
+use App\Models\DeviceControl;
 use App\Services\HistoryService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -145,6 +146,32 @@ class DashboardController extends Controller
             ]);
         }
 
+        // Get latest servo control status
+        $servoControl = DeviceControl::where('device_id', $deviceId)
+            ->orderByDesc('created_at')
+            ->first();
+
+        $servoStatus = [
+            'is_active' => false,
+            'command' => null,
+            'status' => null,
+            'last_activation' => null,
+            'updated_at' => null,
+        ];
+
+        if ($servoControl) {
+            $isActivateServo = $servoControl->control_command === 'ACTIVATE_SERVO';
+            $isPending = $servoControl->status === 'PENDING';
+
+            $servoStatus = [
+                'is_active' => $isActivateServo && $isPending,
+                'command' => $servoControl->control_command,
+                'status' => $servoControl->status,
+                'last_activation' => $servoControl->updated_at,
+                'updated_at' => $servoControl->updated_at,
+            ];
+        }
+
         return view('dashboard2', [
             'device_code' => $deviceCode,
             'device_location' => $deviceLocation,
@@ -155,6 +182,7 @@ class DashboardController extends Controller
             'gallery' => $galleryImages,
             'chart_labels' => $chartLabels,
             'chart_values' => $chartValues,
+            'servo_status' => $servoStatus,
         ]);
     }
 
