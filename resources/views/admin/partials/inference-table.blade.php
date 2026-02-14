@@ -5,6 +5,38 @@
             <h2 class="text-xl font-extrabold text-slate-900">Hasil Inferensi Terbaru</h2>
             <p class="text-sm text-slate-500 italic">Menampilkan inferensi terbaru yang tersimpan di backend.</p>
         </div>
+        <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-wrap items-center gap-2">
+            <select name="inference_device"
+                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Semua Device</option>
+                @foreach ($deviceOptions ?? [] as $deviceCode)
+                    <option value="{{ $deviceCode }}" @selected(($inferenceFilters['device_code'] ?? '') === $deviceCode)>
+                        {{ $deviceCode }}
+                    </option>
+                @endforeach
+            </select>
+            <select name="inference_status"
+                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Semua Status</option>
+                @foreach ($inferenceStatusOptions ?? [] as $statusOption)
+                    <option value="{{ $statusOption }}" @selected(($inferenceFilters['status'] ?? '') === $statusOption)>
+                        {{ $statusOption }}
+                    </option>
+                @endforeach
+            </select>
+            <input type="date" name="inference_date_from" value="{{ $inferenceFilters['date_from'] ?? '' }}"
+                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="date" name="inference_date_to" value="{{ $inferenceFilters['date_to'] ?? '' }}"
+                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="submit"
+                class="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition">
+                Terapkan
+            </button>
+            <a href="{{ route('admin.dashboard') }}#inference"
+                class="px-3 py-2 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                Reset
+            </a>
+        </form>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-left">
@@ -59,7 +91,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-8 py-6 text-center text-sm text-slate-500">Belum ada data
+                        <td colspan="6" class="px-8 py-6 text-center text-sm text-slate-500">Belum ada data
                             inferensi.</td>
                     </tr>
                 @endforelse

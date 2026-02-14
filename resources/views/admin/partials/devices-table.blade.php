@@ -5,10 +5,31 @@
             <h2 class="text-xl font-extrabold text-slate-900">Daftar Perangkat IoT</h2>
             <p class="text-sm text-slate-500">Kelola endpoint dan monitoring status hardware.</p>
         </div>
-        <button onclick="openDeviceModal()"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all active:scale-95">
-            <i data-lucide="plus" class="w-4 h-4"></i> Tambah Device
-        </button>
+        <div class="flex flex-wrap items-center justify-end gap-3">
+            <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-wrap items-center gap-2">
+                <input type="text" name="devices_search" placeholder="Cari device/lokasi..."
+                    value="{{ $deviceFilters['search'] ?? '' }}"
+                    class="w-44 bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="devices_status"
+                    class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Semua Status</option>
+                    <option value="active" @selected(($deviceFilters['status'] ?? '') === 'active')>Aktif</option>
+                    <option value="inactive" @selected(($deviceFilters['status'] ?? '') === 'inactive')>Non-aktif</option>
+                </select>
+                <button type="submit"
+                    class="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition">
+                    Terapkan
+                </button>
+                <a href="{{ route('admin.dashboard') }}#devices"
+                    class="px-3 py-2 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                    Reset
+                </a>
+            </form>
+            <button onclick="openDeviceModal()"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all active:scale-95">
+                <i data-lucide="plus" class="w-4 h-4"></i> Tambah Device
+            </button>
+        </div>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-left">

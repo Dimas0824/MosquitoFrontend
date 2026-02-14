@@ -4,26 +4,29 @@
             <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Galeri Visual Deteksi</h2>
             <p class="text-sm text-slate-500">Hasil visual yang dikirim oleh modul kamera.</p>
         </div>
-        @php
-            $deviceOptions = collect($galleryImages ?? [])
-                ->pluck('device_code')
-                ->filter()
-                ->unique();
-        @endphp
-        <div class="flex items-center gap-2">
-            <span class="text-xs font-medium text-slate-400">Filter by:</span>
-            <select
-                class="bg-white border border-slate-200 text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500">
-                @if ($deviceOptions->isNotEmpty())
-                    <option value="">Semua Device</option>
-                    @foreach ($deviceOptions as $deviceCode)
-                        <option value="{{ $deviceCode }}">{{ $deviceCode }}</option>
-                    @endforeach
-                @else
-                    <option disabled>Belum ada device</option>
-                @endif
+        <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-wrap items-center gap-2">
+            <select name="gallery_device"
+                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Semua Device</option>
+                @foreach ($deviceOptions ?? [] as $deviceCode)
+                    <option value="{{ $deviceCode }}" @selected(($galleryFilters['device_code'] ?? '') === $deviceCode)>
+                        {{ $deviceCode }}
+                    </option>
+                @endforeach
             </select>
-        </div>
+            <input type="date" name="gallery_date_from" value="{{ $galleryFilters['date_from'] ?? '' }}"
+                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="date" name="gallery_date_to" value="{{ $galleryFilters['date_to'] ?? '' }}"
+                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="submit"
+                class="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition">
+                Terapkan
+            </button>
+            <a href="{{ route('admin.dashboard') }}#gallery"
+                class="px-3 py-2 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                Reset
+            </a>
+        </form>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         @forelse ($galleryImages as $img)
