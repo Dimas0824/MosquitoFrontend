@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->string('device_code');
             $table->string('image_type', 50)->nullable();
             $table->string('image_path', 500)->nullable();
-            $table->longText('image_blob')->nullable();
+            $table->longblob('image_blob')->nullable();
             $table->integer('width')->nullable();
             $table->integer('height')->nullable();
             $table->string('checksum', 64)->nullable();

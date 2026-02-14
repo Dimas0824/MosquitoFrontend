@@ -12,19 +12,21 @@
                 <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Pusat Data & Inferensi</h1>
                 <p class="text-xs text-slate-500">Monitoring dan kontrol IoT</p>
             </div>
-            <form method="POST" action="{{ route('admin.logout') }}">
-                @csrf
-                <button type="submit"
-                    class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                    Keluar
-                </button>
-                <button type="submit"
-                    class="sm:hidden inline-flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                    Keluar
-                </button>
-            </form>
+            <div class="flex items-center gap-2">
+                <form method="POST" action="{{ route('admin.logout') }}">
+                    @csrf
+                    <button type="submit"
+                        class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        Keluar
+                    </button>
+                    <button type="submit"
+                        class="sm:hidden inline-flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        Keluar
+                    </button>
+                </form>
+            </div>
         </div>
         <div class="flex flex-col gap-2 text-[11px] font-semibold text-slate-500">
             @if (!empty($adminEmail))
