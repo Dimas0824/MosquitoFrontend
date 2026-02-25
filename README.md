@@ -97,11 +97,16 @@ REDIS_CLIENT=phpredis
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_PASSWORD=null
+REDIS_TIMEOUT=1.0
+REDIS_READ_TIMEOUT=1.0
+REDIS_READ_WRITE_TIMEOUT=1.0
+REDIS_MAX_RETRIES=1
 
 REDIS_FALLBACK_ENABLED=true
 REDIS_FALLBACK_CACHE_STORE=failover
 REDIS_FALLBACK_SESSION_DRIVER=database
 REDIS_FALLBACK_QUEUE_CONNECTION=failover
+REDIS_FALLBACK_PROBE_COOLDOWN_SECONDS=15
 ```
 
 ## Menjalankan Aplikasi
@@ -192,6 +197,7 @@ Format/lint PHP (opsional):
 | `'vite' is not recognized as an internal or external command` | Jalankan `npm install` agar binary `vite` tersedia di `node_modules`. |
 | `could not find driver` saat menjalankan Artisan | Aktifkan ekstensi DB PHP yang sesuai, misalnya `pdo_mysql`. |
 | Perubahan `.env` tidak terbaca | Jalankan `php artisan optimize:clear`. |
+| Redis tiba-tiba down dan request jadi lambat | Gunakan `REDIS_TIMEOUT=1.0`, `REDIS_MAX_RETRIES=1`, dan pastikan fallback aktif (`REDIS_FALLBACK_ENABLED=true`). |
 | Scheduler tidak berjalan | Pastikan cron `php artisan schedule:run` aktif setiap menit. |
 
 ## Keamanan

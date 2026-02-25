@@ -41,6 +41,20 @@ Default cache sudah diarahkan ke Redis (`CACHE_STORE=redis`). Pilih salah satu m
 - Redis (default): pastikan `REDIS_HOST`, `REDIS_PORT`, dan `REDIS_PASSWORD` sesuai. Cache database memakai DB `REDIS_CACHE_DB=1`.
 - Memcached: set `CACHE_STORE=memcached`, lalu sesuaikan `MEMCACHED_HOST`, `MEMCACHED_PORT`, `MEMCACHED_USERNAME`, dan `MEMCACHED_PASSWORD` jika memerlukan SASL.
 
+Untuk shared hosting (agar web tetap responsif saat Redis mati mendadak), tambahkan:
+
+```env
+REDIS_TIMEOUT=1.0
+REDIS_READ_TIMEOUT=1.0
+REDIS_READ_WRITE_TIMEOUT=1.0
+REDIS_MAX_RETRIES=1
+REDIS_FALLBACK_ENABLED=true
+REDIS_FALLBACK_CACHE_STORE=failover
+REDIS_FALLBACK_SESSION_DRIVER=database
+REDIS_FALLBACK_QUEUE_CONNECTION=failover
+REDIS_FALLBACK_PROBE_COOLDOWN_SECONDS=15
+```
+
 Setelah mengubah `.env`, clear config cache jika pernah di-cache:
 
 ```bash
@@ -233,6 +247,12 @@ DB_DATABASE=mosquito_db                 # Database name
 1. Cek MySQL/MariaDB berjalan
 2. Verifikasi credentials di `.env`
 3. Create database: `CREATE DATABASE mosquito_db;`
+
+### Redis down tiba-tiba
+
+1. Pastikan fallback aktif (`REDIS_FALLBACK_ENABLED=true`)
+2. Gunakan timeout singkat (`REDIS_TIMEOUT=1.0`, `REDIS_MAX_RETRIES=1`)
+3. Clear config cache: `php artisan optimize:clear`
 
 ## Next Steps
 

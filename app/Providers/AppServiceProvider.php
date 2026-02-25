@@ -15,6 +15,12 @@ class AppServiceProvider extends ServiceProvider
      * @var array<string, bool>
      */
     private array $redisAvailability = [];
+    /**
+     * Cached Redis failure state loaded from disk.
+     *
+     * @var array<string, int>|null
+     */
+    private ?array $redisFailureState = null;
 
     /**
      * Register any application services.
@@ -131,11 +137,18 @@ class AppServiceProvider extends ServiceProvider
             return $this->redisAvailability[$connection];
         }
 
+        if ($this->shouldSkipRedisProbe($connection)) {
+            return $this->redisAvailability[$connection] = false;
+        }
+
         try {
             Redis::connection($connection)->ping();
+            $this->clearRedisFailureMarker($connection);
 
             return $this->redisAvailability[$connection] = true;
         } catch (Throwable $exception) {
+            $this->rememberRedisFailureMarker($connection);
+
             Log::warning('Redis ping failed.', [
                 'redis_connection' => $connection,
                 'error' => $exception->getMessage(),
@@ -143,6 +156,116 @@ class AppServiceProvider extends ServiceProvider
 
             return $this->redisAvailability[$connection] = false;
         }
+    }
+
+    private function shouldSkipRedisProbe(string $connection): bool
+    {
+        $cooldownSeconds = (int) config('redis_fallback.probe_cooldown_seconds', 15);
+
+        if ($cooldownSeconds <= 0) {
+            return false;
+        }
+
+        $state = $this->readRedisFailureState();
+        $lastFailureAt = $state[$connection] ?? null;
+
+        if (! is_int($lastFailureAt) || $lastFailureAt <= 0) {
+            return false;
+        }
+
+        return (time() - $lastFailureAt) < $cooldownSeconds;
+    }
+
+    private function rememberRedisFailureMarker(string $connection): void
+    {
+        $state = $this->readRedisFailureState();
+        $state[$connection] = time();
+
+        $this->persistRedisFailureState($state);
+    }
+
+    private function clearRedisFailureMarker(string $connection): void
+    {
+        $state = $this->readRedisFailureState();
+
+        if (! array_key_exists($connection, $state)) {
+            return;
+        }
+
+        unset($state[$connection]);
+        $this->persistRedisFailureState($state);
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function readRedisFailureState(): array
+    {
+        if ($this->redisFailureState !== null) {
+            return $this->redisFailureState;
+        }
+
+        $path = $this->redisFailureStatePath();
+
+        if (! is_file($path)) {
+            return $this->redisFailureState = [];
+        }
+
+        $raw = @file_get_contents($path);
+
+        if ($raw === false || $raw === '') {
+            return $this->redisFailureState = [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (! is_array($decoded)) {
+            return $this->redisFailureState = [];
+        }
+
+        $state = [];
+
+        foreach ($decoded as $connection => $timestamp) {
+            if (is_string($connection) && is_numeric($timestamp)) {
+                $state[$connection] = (int) $timestamp;
+            }
+        }
+
+        return $this->redisFailureState = $state;
+    }
+
+    /**
+     * @param array<string, int> $state
+     */
+    private function persistRedisFailureState(array $state): void
+    {
+        $this->redisFailureState = $state;
+        $path = $this->redisFailureStatePath();
+
+        try {
+            $directory = dirname($path);
+
+            if (! is_dir($directory) && ! @mkdir($directory, 0755, true) && ! is_dir($directory)) {
+                return;
+            }
+
+            if ($state === []) {
+                @unlink($path);
+
+                return;
+            }
+
+            @file_put_contents($path, json_encode($state, JSON_THROW_ON_ERROR), LOCK_EX);
+        } catch (Throwable $exception) {
+            Log::debug('Unable to persist Redis failure state marker.', [
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function redisFailureStatePath(): string
+    {
+        return storage_path('framework/cache/redis_fallback_state.json');
     }
 
     private function resolveCacheFallbackStore(): string
