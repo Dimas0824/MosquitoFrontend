@@ -4,7 +4,8 @@
             <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Galeri Visual Deteksi</h2>
             <p class="text-sm text-slate-500">Hasil visual yang dikirim oleh modul kamera.</p>
         </div>
-        <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-wrap items-center gap-2">
+        <form id="adminGalleryFilterForm" method="GET" action="{{ route('admin.dashboard') }}" data-admin-filter-form
+            class="flex flex-wrap items-center gap-2">
             <select name="gallery_device"
                 class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">Semua Device</option>
@@ -22,10 +23,10 @@
                 class="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition">
                 Terapkan
             </button>
-            <a href="{{ route('admin.dashboard') }}#gallery"
-                class="px-3 py-2 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+            <button type="button"
+                class="admin-filter-reset px-3 py-2 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
                 Reset
-            </a>
+            </button>
         </form>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">

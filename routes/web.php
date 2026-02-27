@@ -59,6 +59,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware(['admin.auth'])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+        Route::get('/filters/panels', [AdminController::class, 'filterPanels'])->name('filters.panels');
+        Route::get('/chart-data', [AdminController::class, 'chartData'])->name('chart.data');
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
         Route::post('/devices', [AdminDeviceController::class, 'store'])->name('devices.store');

@@ -5,7 +5,8 @@
             <h2 class="text-xl font-extrabold text-slate-900">Hasil Inferensi Terbaru</h2>
             <p class="text-sm text-slate-500 italic">Menampilkan inferensi terbaru yang tersimpan di backend.</p>
         </div>
-        <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-wrap items-center gap-2">
+        <form id="adminInferenceFilterForm" method="GET" action="{{ route('admin.dashboard') }}" data-admin-filter-form
+            class="flex flex-wrap items-center gap-2">
             <select name="inference_device"
                 class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">Semua Device</option>
@@ -32,10 +33,10 @@
                 class="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition">
                 Terapkan
             </button>
-            <a href="{{ route('admin.dashboard') }}#inference"
-                class="px-3 py-2 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+            <button type="button"
+                class="admin-filter-reset px-3 py-2 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
                 Reset
-            </a>
+            </button>
         </form>
     </div>
     <div class="overflow-x-auto">

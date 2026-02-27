@@ -7,12 +7,33 @@ use App\Models\Device;
 use App\Models\Image;
 use App\Models\InferenceResult;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class AdminController extends Controller
 {
     public function index(Request $request)
+    {
+        $dashboardData = $this->resolveDashboardData($request);
+
+        return view('admin.admin', array_merge([
+            'admin_email' => session('admin_email'),
+        ], $dashboardData));
+    }
+
+    public function filterPanels(Request $request)
+    {
+        $dashboardData = $this->resolveDashboardData($request);
+
+        return response()->json([
+            'devices_html' => view('admin.partials.devices-table', $dashboardData)->render(),
+            'inference_html' => view('admin.partials.inference-table', $dashboardData)->render(),
+            'gallery_html' => view('admin.partials.gallery-grid', $dashboardData)->render(),
+        ]);
+    }
+
+    private function resolveDashboardData(Request $request): array
     {
         $deviceFilters = [
             'search' => trim((string) $request->query('devices_search', '')),
@@ -126,7 +147,7 @@ class AdminController extends Controller
 
         $galleryQuery = Image::query()
             ->with(['device', 'inferenceResult'])
-            ->where('image_type', 'preprocessed')
+            ->where('image_type', 'original')
             ->when($galleryFilters['device_code'] !== '', function ($query) use ($galleryFilters) {
                 $selectedDeviceCode = $galleryFilters['device_code'];
 
@@ -171,8 +192,7 @@ class AdminController extends Controller
                 ];
             });
 
-        return view('admin.admin', [
-            'admin_email' => session('admin_email'),
+        return [
             'stats' => $stats,
             'devices' => $devices,
             'inferenceResults' => $inferenceResults,
@@ -182,7 +202,22 @@ class AdminController extends Controller
             'deviceFilters' => $deviceFilters,
             'inferenceFilters' => $inferenceFilters,
             'galleryFilters' => $galleryFilters,
-        ]);
+        ];
+    }
+
+    public function chartData(Request $request)
+    {
+        $allowedModes = ['date_range', 'week_in_month'];
+        $mode = (string) $request->query('mode', 'date_range');
+        if (!in_array($mode, $allowedModes, true)) {
+            $mode = 'date_range';
+        }
+
+        if ($mode === 'week_in_month') {
+            return $this->buildWeekInMonthChartResponse($request);
+        }
+
+        return $this->buildDateRangeChartResponse($request);
     }
 
     private function parseDateInput(?string $value, bool $endOfDay = false): ?Carbon
@@ -198,6 +233,114 @@ class AdminController extends Controller
         } catch (Throwable) {
             return null;
         }
+    }
+
+    private function buildDateRangeChartResponse(Request $request)
+    {
+        $dateFrom = $this->parseDateInput((string) $request->query('date_from', ''));
+        $dateTo = $this->parseDateInput((string) $request->query('date_to', ''), true);
+
+        if ($dateFrom === null && $dateTo === null) {
+            $dateFrom = now()->subDays(6)->startOfDay();
+            $dateTo = now()->endOfDay();
+        } elseif ($dateFrom === null && $dateTo !== null) {
+            $dateFrom = $dateTo->copy()->subDays(6)->startOfDay();
+        } elseif ($dateFrom !== null && $dateTo === null) {
+            $dateTo = $dateFrom->copy()->addDays(6)->endOfDay();
+        }
+
+        if ($dateFrom !== null && $dateTo !== null && $dateFrom->greaterThan($dateTo)) {
+            [$dateFrom, $dateTo] = [$dateTo->copy()->startOfDay(), $dateFrom->copy()->endOfDay()];
+        }
+
+        [$labels, $values] = $this->buildDailySeries($dateFrom, $dateTo);
+
+        return response()->json([
+            'mode' => 'date_range',
+            'labels' => $labels,
+            'values' => $values,
+            'meta' => [
+                'title' => 'Deteksi Jentik per Hari',
+                'range_text' => $dateFrom->format('d M Y') . ' - ' . $dateTo->format('d M Y'),
+                'date_from' => $dateFrom->toDateString(),
+                'date_to' => $dateTo->toDateString(),
+            ],
+        ]);
+    }
+
+    private function buildWeekInMonthChartResponse(Request $request)
+    {
+        $monthInput = (int) $request->query('month', now()->month);
+        $yearInput = (int) $request->query('year', now()->year);
+        $weekInput = (int) $request->query('week', 1);
+
+        $month = min(max($monthInput, 1), 12);
+        $year = min(max($yearInput, 2000), 2100);
+
+        $monthStart = Carbon::create($year, $month, 1)->startOfDay();
+        $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
+
+        $firstWeekStart = $monthStart->copy()->startOfWeek(Carbon::MONDAY);
+        $lastWeekEnd = $monthEnd->copy()->endOfWeek(Carbon::SUNDAY);
+        $weeksInMonth = $firstWeekStart->diffInWeeks($lastWeekEnd) + 1;
+
+        $week = min(max($weekInput, 1), $weeksInMonth);
+
+        $selectedWeekStart = $firstWeekStart->copy()->addWeeks($week - 1);
+        $selectedWeekEnd = $selectedWeekStart->copy()->endOfWeek(Carbon::SUNDAY);
+
+        $rangeStart = $selectedWeekStart->copy()->startOfDay();
+        if ($rangeStart->lessThan($monthStart)) {
+            $rangeStart = $monthStart->copy();
+        }
+
+        $rangeEnd = $selectedWeekEnd->copy()->endOfDay();
+        if ($rangeEnd->greaterThan($monthEnd)) {
+            $rangeEnd = $monthEnd->copy();
+        }
+
+        [$labels, $values] = $this->buildDailySeries($rangeStart, $rangeEnd);
+
+        return response()->json([
+            'mode' => 'week_in_month',
+            'labels' => $labels,
+            'values' => $values,
+            'meta' => [
+                'title' => 'Deteksi Jentik per Hari',
+                'range_text' => 'Minggu ke-' . $week . ' ' . $monthStart->locale('id')->isoFormat('MMMM Y'),
+                'week' => $week,
+                'month' => $month,
+                'year' => $year,
+                'weeks_in_month' => $weeksInMonth,
+                'date_from' => $rangeStart->toDateString(),
+                'date_to' => $rangeEnd->toDateString(),
+            ],
+        ]);
+    }
+
+    private function buildDailySeries(Carbon $rangeStart, Carbon $rangeEnd): array
+    {
+        $totals = DB::table('inference_results')
+            ->selectRaw('DATE(inference_at) as day, COALESCE(SUM(total_jentik), 0) as total')
+            ->whereBetween('inference_at', [$rangeStart, $rangeEnd])
+            ->groupBy('day')
+            ->orderBy('day')
+            ->pluck('total', 'day');
+
+        $labels = [];
+        $values = [];
+
+        $cursor = $rangeStart->copy()->startOfDay();
+        $end = $rangeEnd->copy()->startOfDay();
+
+        while ($cursor->lessThanOrEqualTo($end)) {
+            $dayKey = $cursor->toDateString();
+            $labels[] = $cursor->locale('id')->isoFormat('ddd, D MMM');
+            $values[] = (int) ($totals[$dayKey] ?? 0);
+            $cursor->addDay();
+        }
+
+        return [$labels, $values];
     }
 
     private function normalizeImagePath(?string $path): ?string
