@@ -17,8 +17,8 @@
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(79, 70, 229, 0.18);
         }
 
         .animate-fade-in {
@@ -46,15 +46,15 @@
         showPassword: false,
         loading: false,
         error: '',
-    
+
         submitForm() {
             this.error = '';
-    
+
             if (!this.email || !this.password) {
                 this.error = 'Email dan Kata Sandi wajib diisi.';
                 return;
             }
-    
+
             this.loading = true;
             $refs.loginForm.submit();
         }
@@ -99,7 +99,7 @@
                 <div>
                     <label for="email" class="block text-sm font-medium text-slate-700 mb-2">Email</label>
                     <input type="email" id="email" name="email" x-model="email" value="{{ old('email') }}"
-                        class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                         placeholder="admin@contoh.com" required>
                 </div>
 
@@ -108,7 +108,7 @@
                     <div class="relative">
                         <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
                             x-model="password"
-                            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
+                            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-12"
                             placeholder="Masukkan kata sandi" required>
                         <button type="button" @click="showPassword = !showPassword"
                             class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
@@ -132,7 +132,7 @@
                 </div>
 
                 <button type="submit" :disabled="loading"
-                    class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    class="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                     <template x-if="loading">
                         <span
                             class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
@@ -145,7 +145,7 @@
                 <p>Sistem Deteksi Jentik Otomatis &copy; {{ date('Y') }}</p>
                 <p>
                     Bukan admin? <a href="{{ route('login') }}"
-                        class="text-blue-500 font-semibold hover:underline">Masuk
+                        class="text-indigo-600 font-semibold hover:underline">Masuk
                         sebagai perangkat</a>
                 </p>
             </div>

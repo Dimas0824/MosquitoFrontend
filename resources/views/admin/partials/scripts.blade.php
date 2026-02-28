@@ -118,16 +118,6 @@
         }
     });
 
-    document.querySelectorAll('nav a').forEach(link => {
-        link.addEventListener('click', function() {
-            document.querySelectorAll('nav a').forEach(l => l.classList.remove('sidebar-item-active',
-                'text-indigo-600'));
-            document.querySelectorAll('nav a').forEach(l => l.classList.add('text-slate-500'));
-            this.classList.add('sidebar-item-active');
-            this.classList.remove('text-slate-500');
-        });
-    });
-
     window.onclick = function(event) {
         if (event.target && event.target.id === 'modalDevice') {
             closeModal('modalDevice');
@@ -180,11 +170,209 @@
         }
     });
 
+    const galleryPreviewModal = document.getElementById('galleryPreviewModal');
+    const galleryPreviewDialog = galleryPreviewModal?.querySelector('[data-gallery-preview-dialog]');
+    const galleryPreviewImage = document.getElementById('galleryPreviewImage');
+    const galleryPreviewDevice = document.getElementById('galleryPreviewDevice');
+    const galleryPreviewLabel = document.getElementById('galleryPreviewLabel');
+    const galleryPreviewCapturedAt = document.getElementById('galleryPreviewCapturedAt');
+    const galleryPreviewClose = document.getElementById('galleryPreviewClose');
+
+    function isGalleryPreviewOpen() {
+        return galleryPreviewModal instanceof HTMLElement && !galleryPreviewModal.classList.contains('hidden');
+    }
+
+    function openGalleryPreview(payload) {
+        if (!(galleryPreviewModal instanceof HTMLElement) || !(galleryPreviewDialog instanceof HTMLElement) ||
+            !(galleryPreviewImage instanceof HTMLImageElement)) {
+            return;
+        }
+
+        galleryPreviewImage.src = payload.src;
+        galleryPreviewImage.alt = payload.alt || 'Preview galeri';
+        if (galleryPreviewDevice instanceof HTMLElement) {
+            galleryPreviewDevice.textContent = payload.device || '-';
+        }
+        if (galleryPreviewLabel instanceof HTMLElement) {
+            const labelText = payload.score ? `${payload.label} (${payload.score}%)` : payload.label;
+            galleryPreviewLabel.textContent = labelText || '-';
+        }
+        if (galleryPreviewCapturedAt instanceof HTMLElement) {
+            galleryPreviewCapturedAt.textContent = payload.capturedAt || '-';
+        }
+
+        galleryPreviewModal.classList.remove('hidden');
+        galleryPreviewModal.classList.add('flex');
+        galleryPreviewModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+        requestAnimationFrame(() => {
+            galleryPreviewModal.classList.remove('opacity-0');
+            galleryPreviewDialog.classList.remove('scale-95');
+        });
+    }
+
+    function closeGalleryPreview() {
+        if (!(galleryPreviewModal instanceof HTMLElement) || !(galleryPreviewDialog instanceof HTMLElement)) {
+            return;
+        }
+
+        galleryPreviewModal.classList.add('opacity-0');
+        galleryPreviewDialog.classList.add('scale-95');
+        setTimeout(() => {
+            galleryPreviewModal.classList.add('hidden');
+            galleryPreviewModal.classList.remove('flex');
+            galleryPreviewModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('overflow-hidden');
+            if (galleryPreviewImage instanceof HTMLImageElement) {
+                galleryPreviewImage.src = '';
+            }
+        }, 200);
+    }
+
+    const buildGalleryPreviewPayload = card => {
+        if (!(card instanceof HTMLElement)) {
+            return null;
+        }
+
+        const image = card.querySelector('img');
+        if (!(image instanceof HTMLImageElement) || !image.src) {
+            return null;
+        }
+
+        return {
+            src: image.src,
+            alt: image.alt || 'Preview galeri',
+            device: card.dataset.galleryDevice || '-',
+            label: card.dataset.galleryLabel || '-',
+            score: card.dataset.galleryScore || '',
+            capturedAt: card.dataset.galleryCapturedAt || '-',
+        };
+    };
+
+    galleryPreviewClose?.addEventListener('click', closeGalleryPreview);
+
+    galleryPreviewModal?.addEventListener('click', event => {
+        if (event.target === galleryPreviewModal) {
+            closeGalleryPreview();
+        }
+    });
+
+    document.addEventListener('click', event => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const galleryCard = target.closest('[data-gallery-item]');
+        if (!galleryCard) {
+            return;
+        }
+
+        const payload = buildGalleryPreviewPayload(galleryCard);
+        if (!payload) {
+            return;
+        }
+
+        event.preventDefault();
+        openGalleryPreview(payload);
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && isGalleryPreviewOpen()) {
+            closeGalleryPreview();
+            return;
+        }
+
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+
+        const activeElement = document.activeElement;
+        if (!(activeElement instanceof HTMLElement) || !activeElement.matches('[data-gallery-item]')) {
+            return;
+        }
+
+        const payload = buildGalleryPreviewPayload(activeElement);
+        if (!payload) {
+            return;
+        }
+
+        event.preventDefault();
+        openGalleryPreview(payload);
+    });
+
     (function initAdminRealtimeFilters() {
         const endpoint = "{{ route('admin.filters.panels') }}";
         let isFetching = false;
+        const loadingBadge = document.getElementById('adminFilterLoadingBadge');
+
+        const initDateModeForms = (root = document) => {
+            const forms = Array.from(root.querySelectorAll('form[data-date-mode-form]'));
+            forms.forEach(form => {
+                const modeSelect = form.querySelector('[data-date-mode-select]');
+                if (!(modeSelect instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                const exactGroup = form.querySelector('[data-date-mode-group="exact"]');
+                const rangeGroup = form.querySelector('[data-date-mode-group="range"]');
+
+                const syncMode = () => {
+                    const mode = modeSelect.value === 'exact' ? 'exact' : 'range';
+                    if (exactGroup instanceof HTMLElement) {
+                        exactGroup.classList.toggle('hidden', mode !== 'exact');
+                        exactGroup.classList.toggle('flex', mode === 'exact');
+                    }
+                    if (rangeGroup instanceof HTMLElement) {
+                        rangeGroup.classList.toggle('hidden', mode !== 'range');
+                        rangeGroup.classList.toggle('flex', mode === 'range');
+                    }
+                };
+
+                modeSelect.addEventListener('change', syncMode);
+                syncMode();
+            });
+        };
 
         const getFilterForms = () => Array.from(document.querySelectorAll('form[data-admin-filter-form]'));
+
+        const showGlobalLoadingBadge = () => {
+            if (!(loadingBadge instanceof HTMLElement)) {
+                return;
+            }
+
+            loadingBadge.classList.remove('hidden');
+            loadingBadge.classList.add('inline-flex');
+            loadingBadge.setAttribute('aria-hidden', 'false');
+        };
+
+        const hideGlobalLoadingBadge = () => {
+            if (!(loadingBadge instanceof HTMLElement)) {
+                return;
+            }
+
+            loadingBadge.classList.remove('inline-flex');
+            loadingBadge.classList.add('hidden');
+            loadingBadge.setAttribute('aria-hidden', 'true');
+        };
+
+        const toggleFilterControls = disabled => {
+            getFilterForms().forEach(form => {
+                form.classList.toggle('opacity-60', disabled);
+                form.classList.toggle('cursor-not-allowed', disabled);
+
+                Array.from(form.elements).forEach(field => {
+                    if (!(field instanceof HTMLInputElement ||
+                            field instanceof HTMLSelectElement ||
+                            field instanceof HTMLTextAreaElement ||
+                            field instanceof HTMLButtonElement)) {
+                        return;
+                    }
+
+                    field.disabled = disabled;
+                });
+            });
+        };
 
         const setFieldValue = element => {
             if (element instanceof HTMLSelectElement) {
@@ -249,15 +437,177 @@
             current.replaceWith(next);
         };
 
-        const applyFilterPanels = async () => {
+        const createDevicesSkeleton = () => {
+            const rows = Array.from({
+                length: 5
+            }, () => `
+                <tr class="border-t border-slate-100">
+                    <td class="px-8 py-5"><div class="h-3 w-28 bg-slate-200 rounded animate-pulse"></div></td>
+                    <td class="px-8 py-5"><div class="h-3 w-40 bg-slate-200 rounded animate-pulse"></div></td>
+                    <td class="px-8 py-5"><div class="h-5 w-20 bg-slate-200 rounded-full animate-pulse"></div></td>
+                    <td class="px-8 py-5 text-right"><div class="h-8 w-20 bg-slate-200 rounded-xl ml-auto animate-pulse"></div></td>
+                </tr>
+            `).join('');
+
+            return `
+                <section id="devices" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                        <div class="space-y-2">
+                            <div class="h-6 w-52 bg-slate-200 rounded animate-pulse"></div>
+                            <div class="h-3 w-64 bg-slate-200 rounded animate-pulse"></div>
+                        </div>
+                        <div class="h-10 w-72 bg-slate-200 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </section>
+            `;
+        };
+
+        const createInferenceSkeleton = () => {
+            const rows = Array.from({
+                length: 6
+            }, () => `
+                <tr class="border-t border-slate-100">
+                    <td class="px-8 py-5"><div class="h-3 w-36 bg-slate-200 rounded animate-pulse"></div></td>
+                    <td class="px-8 py-5"><div class="h-3 w-24 bg-slate-200 rounded animate-pulse"></div></td>
+                    <td class="px-8 py-5"><div class="h-5 w-24 bg-slate-200 rounded-full animate-pulse"></div></td>
+                    <td class="px-8 py-5 text-center"><div class="h-3 w-20 bg-slate-200 rounded mx-auto animate-pulse"></div></td>
+                    <td class="px-8 py-5 text-right"><div class="h-3 w-10 bg-slate-200 rounded ml-auto animate-pulse"></div></td>
+                    <td class="px-8 py-5 text-right"><div class="h-8 w-16 bg-slate-200 rounded-lg ml-auto animate-pulse"></div></td>
+                </tr>
+            `).join('');
+
+            return `
+                <section id="inference" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                        <div class="space-y-2">
+                            <div class="h-6 w-56 bg-slate-200 rounded animate-pulse"></div>
+                            <div class="h-3 w-72 bg-slate-200 rounded animate-pulse"></div>
+                        </div>
+                        <div class="h-10 w-80 bg-slate-200 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </section>
+            `;
+        };
+
+        const createGallerySkeleton = () => {
+            const cards = Array.from({
+                length: 10
+            }, () => `
+                <div class="aspect-square rounded-3xl bg-slate-200 animate-pulse"></div>
+            `).join('');
+
+            return `
+                <section id="gallery">
+                    <div class="mb-8 flex items-center justify-between gap-4">
+                        <div class="space-y-2">
+                            <div class="h-6 w-52 bg-slate-200 rounded animate-pulse"></div>
+                            <div class="h-3 w-64 bg-slate-200 rounded animate-pulse"></div>
+                        </div>
+                        <div class="h-10 w-72 bg-slate-200 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                        ${cards}
+                    </div>
+                </section>
+            `;
+        };
+
+        const allAsyncSections = ['devices', 'inference', 'gallery'];
+
+        const sectionByFormId = {
+            adminDevicesFilterForm: 'devices',
+            adminInferenceFilterForm: 'inference',
+            adminGalleryFilterForm: 'gallery',
+        };
+
+        const capturePanelSnapshots = sectionIds => sectionIds.reduce((snapshots, sectionId) => {
+            const section = document.getElementById(sectionId);
+            if (section instanceof HTMLElement) {
+                snapshots[sectionId] = section.outerHTML;
+            }
+
+            return snapshots;
+        }, {});
+
+        const restorePanelSnapshots = (snapshots, sectionIds) => {
+            sectionIds.forEach(sectionId => {
+                const html = snapshots[sectionId];
+                if (!html) {
+                    return;
+                }
+
+                replaceSection(sectionId, html);
+            });
+        };
+
+        const renderLoadingPanels = sectionIds => {
+            const skeletonRenderers = {
+                devices: createDevicesSkeleton,
+                inference: createInferenceSkeleton,
+                gallery: createGallerySkeleton,
+            };
+
+            sectionIds.forEach(sectionId => {
+                const renderer = skeletonRenderers[sectionId];
+                if (typeof renderer !== 'function') {
+                    return;
+                }
+
+                replaceSection(sectionId, renderer());
+            });
+        };
+
+        const getLoadingSectionsFromForm = form => {
+            const sectionId = sectionByFormId[form?.id];
+            return sectionId ? [sectionId] : allAsyncSections;
+        };
+
+        const getLoadingSectionsFromQuery = query => {
+            const sectionIds = [];
+            if (query.has('inference_page')) {
+                sectionIds.push('inference');
+            }
+            if (query.has('gallery_page')) {
+                sectionIds.push('gallery');
+            }
+
+            return sectionIds.length > 0 ? sectionIds : allAsyncSections;
+        };
+
+        const applyFilterPanels = async ({
+            extraParams = null,
+            loadingSections = allAsyncSections,
+        } = {}) => {
             if (isFetching) {
                 return;
             }
 
+            const sectionsToLoad = loadingSections.filter(sectionId => allAsyncSections.includes(sectionId));
             isFetching = true;
+            const panelSnapshots = capturePanelSnapshots(sectionsToLoad);
 
             try {
                 const params = collectAllFilterParams();
+                if (extraParams instanceof URLSearchParams) {
+                    extraParams.forEach((value, key) => {
+                        params.set(key, value);
+                    });
+                }
+
+                showGlobalLoadingBadge();
+                toggleFilterControls(true);
+                renderLoadingPanels(sectionsToLoad);
+
                 const response = await fetch(`${endpoint}?${params.toString()}`, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -273,11 +623,15 @@
                 replaceSection('devices', payload.devices_html);
                 replaceSection('inference', payload.inference_html);
                 replaceSection('gallery', payload.gallery_html);
-                lucide.createIcons();
             } catch (error) {
                 console.error(error);
+                restorePanelSnapshots(panelSnapshots, sectionsToLoad);
             } finally {
+                hideGlobalLoadingBadge();
+                toggleFilterControls(false);
                 isFetching = false;
+                initDateModeForms();
+                lucide.createIcons();
             }
         };
 
@@ -288,7 +642,9 @@
             }
 
             event.preventDefault();
-            applyFilterPanels();
+            applyFilterPanels({
+                loadingSections: getLoadingSectionsFromForm(form),
+            });
         });
 
         document.addEventListener('click', event => {
@@ -322,232 +678,48 @@
                 setFieldValue(field);
             });
 
-            applyFilterPanels();
-        });
-    })();
-
-    (function initAdminChart() {
-        const canvas = document.getElementById('adminDetectionsChart');
-        const filterForm = document.getElementById('adminChartFilterForm');
-        if (!canvas || !filterForm || typeof Chart === 'undefined') {
-            return;
-        }
-
-        const modeInput = document.getElementById('chartMode');
-        const dateRangeFields = document.getElementById('dateRangeFields');
-        const weekFields = document.getElementById('weekFields');
-        const dateFromInput = document.getElementById('chartDateFrom');
-        const dateToInput = document.getElementById('chartDateTo');
-        const weekInput = document.getElementById('chartWeek');
-        const monthInput = document.getElementById('chartMonth');
-        const yearInput = document.getElementById('chartYear');
-        const resetButton = document.getElementById('adminChartReset');
-        const titleEl = document.getElementById('adminChartTitle');
-        const rangeTextEl = document.getElementById('adminChartRangeText');
-        const totalEl = document.getElementById('adminChartTotal');
-        const averageEl = document.getElementById('adminChartAverage');
-        const endpoint = "{{ route('admin.chart.data') }}";
-
-        const today = new Date();
-        const toDateInputString = date => date.toISOString().slice(0, 10);
-        const defaultDateTo = toDateInputString(today);
-        const defaultDateFromDate = new Date(today);
-        defaultDateFromDate.setDate(defaultDateFromDate.getDate() - 6);
-        const defaultDateFrom = toDateInputString(defaultDateFromDate);
-
-        if (!dateFromInput.value) {
-            dateFromInput.value = defaultDateFrom;
-        }
-
-        if (!dateToInput.value) {
-            dateToInput.value = defaultDateTo;
-        }
-
-        const ctx = canvas.getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(79, 70, 229, 0.32)');
-        gradient.addColorStop(1, 'rgba(79, 70, 229, 0.02)');
-
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Total Jentik',
-                    data: [],
-                    borderColor: 'rgba(79, 70, 229, 0.95)',
-                    backgroundColor: gradient,
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.38,
-                    pointRadius: 0,
-                    pointHoverRadius: 5,
-                    pointHoverBackgroundColor: 'rgba(79, 70, 229, 1)',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2,
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                animation: {
-                    duration: 520,
-                    easing: 'easeOutQuart',
-                },
-                plugins: {
-                    legend: {
-                        display: false,
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
-                        titleColor: '#fff',
-                        bodyColor: '#e2e8f0',
-                        borderColor: 'rgba(99, 102, 241, 0.35)',
-                        borderWidth: 1,
-                        cornerRadius: 12,
-                        padding: 12,
-                        displayColors: false,
-                        callbacks: {
-                            label: context => `Total jentik: ${context.parsed.y ?? 0}`,
-                        },
-                    },
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            display: false,
-                            drawBorder: false,
-                        },
-                        ticks: {
-                            color: '#64748b',
-                            maxRotation: 0,
-                            autoSkip: true,
-                            maxTicksLimit: 8,
-                            font: {
-                                size: 11,
-                                weight: '600',
-                            },
-                        },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        border: {
-                            display: false,
-                        },
-                        grid: {
-                            color: 'rgba(148, 163, 184, 0.18)',
-                            drawBorder: false,
-                        },
-                        ticks: {
-                            precision: 0,
-                            color: '#94a3b8',
-                            font: {
-                                size: 11,
-                                weight: '600',
-                            },
-                        },
-                    },
-                },
-            },
-        });
-
-        function syncModeFields() {
-            const isWeekMode = modeInput.value === 'week_in_month';
-            dateRangeFields.classList.toggle('hidden', isWeekMode);
-            dateRangeFields.classList.toggle('flex', !isWeekMode);
-            weekFields.classList.toggle('hidden', !isWeekMode);
-            weekFields.classList.toggle('flex', isWeekMode);
-        }
-
-        function updateChart(data) {
-            chart.data.labels = Array.isArray(data.labels) ? data.labels : [];
-            chart.data.datasets[0].data = Array.isArray(data.values) ? data.values : [];
-            chart.update();
-
-            titleEl.textContent = data.meta?.title || 'Deteksi Jentik per Hari';
-            rangeTextEl.textContent = data.meta?.range_text || '-';
-
-            const values = Array.isArray(data.values) ? data.values.map(value => Number(value) || 0) : [];
-            const total = values.reduce((sum, value) => sum + value, 0);
-            const average = values.length > 0 ? (total / values.length) : 0;
-
-            if (totalEl) {
-                totalEl.textContent = String(total);
+            const modeSelect = form.querySelector('[data-date-mode-select]');
+            if (modeSelect instanceof HTMLSelectElement) {
+                modeSelect.value = 'exact';
+                modeSelect.dispatchEvent(new Event('change'));
             }
 
-            if (averageEl) {
-                averageEl.textContent = average.toFixed(1);
-            }
-
-            if (data.meta?.weeks_in_month && weekInput) {
-                const maxWeek = Number(data.meta.weeks_in_month) || 6;
-                Array.from(weekInput.options).forEach(option => {
-                    option.disabled = Number(option.value) > maxWeek;
-                });
-            }
-        }
-
-        async function fetchChartData() {
-            const mode = modeInput.value;
-            const params = new URLSearchParams({
-                mode,
+            applyFilterPanels({
+                loadingSections: getLoadingSectionsFromForm(form),
             });
-
-            if (mode === 'week_in_month') {
-                params.set('week', weekInput.value || '1');
-                params.set('month', monthInput.value || String(today.getMonth() + 1));
-                params.set('year', yearInput.value || String(today.getFullYear()));
-            } else {
-                params.set('date_from', dateFromInput.value || defaultDateFrom);
-                params.set('date_to', dateToInput.value || defaultDateTo);
-            }
-
-            rangeTextEl.textContent = 'Memuat data...';
-
-            try {
-                const response = await fetch(`${endpoint}?${params.toString()}`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Gagal mengambil data grafik');
-                }
-
-                const payload = await response.json();
-                updateChart(payload);
-            } catch (error) {
-                rangeTextEl.textContent = 'Gagal memuat data';
-            }
-        }
-
-        modeInput.addEventListener('change', () => {
-            syncModeFields();
-            fetchChartData();
         });
 
-        filterForm.addEventListener('submit', event => {
+        document.addEventListener('click', event => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const paginationLink = target.closest(
+                '#inference .admin-pagination a, #gallery .admin-pagination a');
+            if (!paginationLink) {
+                return;
+            }
+
+            const href = paginationLink.getAttribute('href');
+            if (!href) {
+                return;
+            }
+
+            const url = new URL(href, window.location.origin);
+            const query = url.searchParams;
+
+            if (!query.has('inference_page') && !query.has('gallery_page')) {
+                return;
+            }
+
             event.preventDefault();
-            fetchChartData();
+            applyFilterPanels({
+                extraParams: query,
+                loadingSections: getLoadingSectionsFromQuery(query),
+            });
         });
 
-        resetButton?.addEventListener('click', () => {
-            modeInput.value = 'date_range';
-            dateFromInput.value = defaultDateFrom;
-            dateToInput.value = defaultDateTo;
-            weekInput.value = '1';
-            monthInput.value = String(today.getMonth() + 1);
-            yearInput.value = String(today.getFullYear());
-            syncModeFields();
-            fetchChartData();
-        });
-
-        syncModeFields();
-        fetchChartData();
+        initDateModeForms();
     })();
 </script>

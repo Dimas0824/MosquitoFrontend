@@ -16,7 +16,7 @@
             <button type="button" onclick="closeDeletionModal()"
                 class="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-2xl hover:bg-slate-200 transition">Batal</button>
             <button type="button" id="confirmDeletionButton"
-                class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-rose-600 rounded-2xl hover:bg-rose-500 transition">Hapus
+                class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-2xl hover:bg-red-500 transition">Hapus
                 Sekarang</button>
         </div>
     </div>

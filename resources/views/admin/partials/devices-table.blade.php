@@ -72,7 +72,7 @@
                         <td class="px-8 py-5">
                             <div class="flex justify-end gap-2">
                                 <a href="{{ route('admin.devices.impersonate', $device) }}"
-                                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 transition-all"
+                                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 transition-all"
                                     title="View as Device">
                                     <i data-lucide="eye" class="w-4 h-4"></i>
                                 </a>
@@ -92,7 +92,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                        class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+                                        class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all"
                                         title="Hapus">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>

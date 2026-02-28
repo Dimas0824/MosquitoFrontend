@@ -6,7 +6,7 @@
             <p class="text-sm text-slate-500 italic">Menampilkan inferensi terbaru yang tersimpan di backend.</p>
         </div>
         <form id="adminInferenceFilterForm" method="GET" action="{{ route('admin.dashboard') }}" data-admin-filter-form
-            class="flex flex-wrap items-center gap-2">
+            data-date-mode-form class="flex flex-wrap items-center gap-2">
             <select name="inference_device"
                 class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">Semua Device</option>
@@ -25,10 +25,22 @@
                     </option>
                 @endforeach
             </select>
-            <input type="date" name="inference_date_from" value="{{ $inferenceFilters['date_from'] ?? '' }}"
+            <select name="inference_date_mode" data-date-mode-select
                 class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
-            <input type="date" name="inference_date_to" value="{{ $inferenceFilters['date_to'] ?? '' }}"
-                class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="range" @selected(($inferenceFilters['date_mode'] ?? 'exact') === 'range')>Rentang Tanggal</option>
+                <option value="exact" @selected(($inferenceFilters['date_mode'] ?? 'exact') === 'exact')>Tanggal Spesifik</option>
+            </select>
+            <div data-date-mode-group="range" class="flex items-center gap-2">
+                <input type="date" name="inference_date_from" value="{{ $inferenceFilters['date_from'] ?? '' }}"
+                    class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="date" name="inference_date_to" value="{{ $inferenceFilters['date_to'] ?? '' }}"
+                    class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div data-date-mode-group="exact" class="hidden items-center">
+                <input type="date" name="inference_date" value="{{ $inferenceFilters['date'] ?? '' }}"
+                    title="Tanggal spesifik"
+                    class="bg-white border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
             <button type="submit"
                 class="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition">
                 Terapkan
@@ -98,5 +110,15 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    <div class="px-8 py-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-xs text-slate-500">
+            Menampilkan {{ $inferenceResults->firstItem() ?? 0 }}-{{ $inferenceResults->lastItem() ?? 0 }} dari
+            {{ $inferenceResults->total() }} data inferensi
+        </p>
+        <div class="admin-pagination text-xs">
+            {{ $inferenceResults->onEachSide(1)->links('vendor.pagination.admin') }}
+        </div>
     </div>
 </section>

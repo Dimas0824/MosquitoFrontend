@@ -6,6 +6,7 @@ use App\Models\InferenceResult;
 use App\Models\Image;
 use App\Models\DeviceControl;
 use App\Services\HistoryService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
@@ -92,22 +93,59 @@ class DashboardController extends Controller
                 ];
             })->toArray();
 
-        // Weekly chart: last 7 days counts from inference_results
-        $now = now();
-        $startDate = $now->copy()->subDays(6)->startOfDay();
+        $today = now();
+        $chartDateFromInput = trim((string) $request->query('chart_date_from', ''));
+        $chartDateToInput = trim((string) $request->query('chart_date_to', ''));
+
+        $chartDateFrom = null;
+        $chartDateTo = null;
+        try {
+            if ($chartDateFromInput !== '') {
+                $chartDateFrom = Carbon::createFromFormat('Y-m-d', $chartDateFromInput)->startOfDay();
+            }
+            if ($chartDateToInput !== '') {
+                $chartDateTo = Carbon::createFromFormat('Y-m-d', $chartDateToInput)->endOfDay();
+            }
+        } catch (\Throwable) {
+            $chartDateFrom = null;
+            $chartDateTo = null;
+        }
+
+        if ($chartDateFrom === null && $chartDateTo === null) {
+            $chartDateFrom = $today->copy()->subDays(6)->startOfDay();
+            $chartDateTo = $today->copy()->endOfDay();
+        } elseif ($chartDateFrom === null && $chartDateTo !== null) {
+            $chartDateFrom = $chartDateTo->copy()->subDays(6)->startOfDay();
+        } elseif ($chartDateFrom !== null && $chartDateTo === null) {
+            $chartDateTo = $chartDateFrom->copy()->addDays(6)->endOfDay();
+        }
+
+        if ($chartDateFrom !== null && $chartDateTo !== null && $chartDateFrom->greaterThan($chartDateTo)) {
+            [$chartDateFrom, $chartDateTo] = [$chartDateTo->copy()->startOfDay(), $chartDateFrom->copy()->endOfDay()];
+        }
+
+        // Chart by selected date range from inference_results
         $rawCounts = DB::table('inference_results')
             ->selectRaw('DATE(inference_at) as d, COALESCE(SUM(total_jentik), 0) as total')
             ->where('device_id', $deviceId)
-            ->where('inference_at', '>=', $startDate)
+            ->whereBetween('inference_at', [$chartDateFrom, $chartDateTo])
             ->groupBy('d')
             ->pluck('total', 'd');
 
         $chartLabels = [];
         $chartValues = [];
-        for ($i = 0; $i < 7; $i++) {
-            $day = $now->copy()->subDays(6 - $i)->startOfDay();
-            $chartLabels[] = $day->locale('id')->isoFormat('ddd');
-            $chartValues[] = (int) ($rawCounts[$day->toDateString()] ?? 0);
+
+        $cursor = $chartDateFrom->copy()->startOfDay();
+        $chartEnd = $chartDateTo->copy()->startOfDay();
+        while ($cursor->lessThanOrEqualTo($chartEnd)) {
+            $chartLabels[] = $cursor->locale('id')->isoFormat('ddd, D MMM');
+            $chartValues[] = (int) ($rawCounts[$cursor->toDateString()] ?? 0);
+            $cursor->addDay();
+        }
+
+        if (count($chartLabels) === 0) {
+            $chartLabels[] = $today->locale('id')->isoFormat('ddd, D MMM');
+            $chartValues[] = 0;
         }
 
         // KPI sources from inference_results table
@@ -182,6 +220,9 @@ class DashboardController extends Controller
             'gallery' => $galleryImages,
             'chart_labels' => $chartLabels,
             'chart_values' => $chartValues,
+            'chart_date_from' => $chartDateFrom->toDateString(),
+            'chart_date_to' => $chartDateTo->toDateString(),
+            'chart_range_text' => $chartDateFrom->format('d M Y') . ' - ' . $chartDateTo->format('d M Y'),
             'servo_status' => $servoStatus,
         ]);
     }
