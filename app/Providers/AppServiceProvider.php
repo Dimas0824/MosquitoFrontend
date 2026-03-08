@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
 
@@ -35,6 +36,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (! app()->runningInConsole() && request()->headers->get('x-forwarded-proto') === 'https') {
+            URL::forceScheme('https');
+        }
+
         if (! $this->redisFallbackEnabled()) {
             return;
         }
